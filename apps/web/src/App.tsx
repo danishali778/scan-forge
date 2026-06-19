@@ -316,7 +316,7 @@ function App() {
           <span className="brand-mark" aria-hidden="true">
             <ShieldCheck size={24} />
           </span>
-          <span>Pentagi</span>
+          <span>ScopeForge</span>
         </div>
 
         <nav className="nav-list">

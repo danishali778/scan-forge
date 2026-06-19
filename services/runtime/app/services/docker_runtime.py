@@ -313,7 +313,7 @@ print(len(data))
             return
         except NotFound:
             pass
-        if image != "pentagi-runtime-python:local":
+        if image != "scopeforge-runtime-python:local":
             raise RuntimeServiceError(f"Runtime image was not found: {image}")
         self.client.images.build(
             fileobj=_sandbox_build_context(),

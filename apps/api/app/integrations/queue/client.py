@@ -26,7 +26,7 @@ class QueueClient:
 class CeleryQueueClient(QueueClient):
     def __init__(self) -> None:
         settings = get_settings()
-        self._celery = Celery("pentagi_api_queue", broker=settings.celery_broker_url)
+        self._celery = Celery("scopeforge_api_queue", broker=settings.celery_broker_url)
 
     def enqueue_session_plan(self, *, job_id: str) -> str | None:
         result = self._celery.send_task("agent.plan_session", args=[job_id])

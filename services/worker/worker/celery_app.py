@@ -5,7 +5,7 @@ from worker.config import get_settings
 settings = get_settings()
 
 celery_app = Celery(
-    "pentagi_worker",
+    "scopeforge_worker",
     broker=settings.celery_broker_url,
     include=[
         "worker.tasks.health",

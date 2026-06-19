@@ -7,7 +7,7 @@ from fastapi import Request, Response
 
 from app.core.config import get_settings
 
-logger = logging.getLogger("pentagi.api")
+logger = logging.getLogger("scopeforge.api")
 
 
 async def request_context_middleware(

@@ -179,8 +179,8 @@ jobs:
           RUNTIME_SERVICE_URL=http://runtime:8001
           ARTIFACT_STORAGE_BACKEND=supabase
           SUPABASE_STORAGE_BUCKET=scopeforge-artifacts
-          RUNTIME_WORKSPACE_ROOT=/var/lib/pentagi-runtime
-          RUNTIME_DEFAULT_IMAGE=pentagi-runtime-python:local
+          RUNTIME_WORKSPACE_ROOT=/var/lib/scopeforge-runtime
+          RUNTIME_DEFAULT_IMAGE=scopeforge-runtime-python:local
           RUNTIME_CONTAINER_LABEL_PREFIX=scopeforge
           RUNTIME_NETWORK_MODE=none
           RUNTIME_ALLOWED_COMMANDS=python,python3,pwd,ls,cat,echo,find
