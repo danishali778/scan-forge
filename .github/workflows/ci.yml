@@ -1,0 +1,239 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "22"
+
+jobs:
+  backend-tests:
+    name: "1-2 Backend: Ruff + Pytest"
+    runs-on: ubuntu-latest
+
+    env:
+      ENVIRONMENT: test
+      DATABASE_URL: sqlite+pysqlite:///:memory:
+      SUPABASE_URL: http://supabase.test
+      SUPABASE_ANON_KEY: test-key
+      COOKIE_SECURE: "false"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Generate test auth encryption key
+        run: |
+          key="$(python -c 'import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())')"
+          echo "AUTH_ENCRYPTION_KEY=$key" >> "$GITHUB_ENV"
+
+      - name: Install backend dependencies
+        run: python -m pip install -e ".[dev]"
+
+      - name: "Check 1: Ruff"
+        run: >
+          python -m ruff check
+          apps/api/app
+          apps/api/tests
+          infra/migrations
+          scripts
+          services/worker
+          services/runtime
+
+      - name: "Check 2: Pytest"
+        run: python -m pytest
+
+  db-migrations:
+    name: "3 Database: Alembic Upgrade"
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: scopeforge_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d scopeforge_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      ENVIRONMENT: test
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/scopeforge_test
+      SUPABASE_URL: http://supabase.test
+      SUPABASE_ANON_KEY: test-key
+      COOKIE_SECURE: "false"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Generate test auth encryption key
+        run: |
+          key="$(python -c 'import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())')"
+          echo "AUTH_ENCRYPTION_KEY=$key" >> "$GITHUB_ENV"
+
+      - name: Install backend dependencies
+        run: python -m pip install -e ".[dev]"
+
+      - name: "Check 3: Alembic upgrade head"
+        run: python -m alembic -c infra/migrations/alembic.ini upgrade head
+
+  web-build:
+    name: "4 Web: TypeScript + Vite Build"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install web dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: "Check 4: Web build"
+        working-directory: apps/web
+        run: npm run build
+
+  docker-build:
+    name: "5 Docker: Image Build"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: "Check 5a: Build API image"
+        run: docker build -f apps/api/Dockerfile -t scopeforge-api:ci .
+
+      - name: "Check 5b: Build worker image"
+        run: docker build -f services/worker/Dockerfile -t scopeforge-worker:ci .
+
+      - name: "Check 5c: Build runtime service image"
+        run: docker build -f services/runtime/Dockerfile -t scopeforge-runtime-service:ci .
+
+      - name: "Check 5d: Build web image"
+        run: docker build -f apps/web/Dockerfile -t scopeforge-web:ci .
+
+  compose-health:
+    name: "6 Docker Compose: Health Smoke"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create CI env file for Compose
+        run: |
+          auth_key="$(python3 -c 'import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())')"
+          cat > .env <<'EOF'
+          ENVIRONMENT=test
+          ENABLE_DOCS=false
+          CORS_ORIGINS=http://localhost:5173
+          SESSION_COOKIE_NAME=app_session
+          CSRF_COOKIE_NAME=app_csrf
+          CSRF_HEADER_NAME=X-CSRF-Token
+          AUTH_ENCRYPTION_KEY=__AUTH_KEY__
+          SESSION_TTL_SECONDS=28800
+          REFRESH_SESSION_TTL_SECONDS=2592000
+          COOKIE_SECURE=false
+          COOKIE_SAMESITE=lax
+          SUPABASE_URL=http://supabase.test
+          SUPABASE_ANON_KEY=test-key
+          SUPABASE_SERVICE_ROLE_KEY=test-service-key
+          DATABASE_URL=sqlite+pysqlite:///:memory:
+          REDIS_URL=redis://redis:6379/0
+          CELERY_BROKER_URL=redis://redis:6379/0
+          RUNTIME_SERVICE_URL=http://runtime:8001
+          ARTIFACT_STORAGE_BACKEND=supabase
+          SUPABASE_STORAGE_BUCKET=scopeforge-artifacts
+          RUNTIME_WORKSPACE_ROOT=/var/lib/pentagi-runtime
+          RUNTIME_DEFAULT_IMAGE=pentagi-runtime-python:local
+          RUNTIME_CONTAINER_LABEL_PREFIX=scopeforge
+          RUNTIME_NETWORK_MODE=none
+          RUNTIME_ALLOWED_COMMANDS=python,python3,pwd,ls,cat,echo,find
+          EOF
+          sed -i "s|__AUTH_KEY__|${auth_key}|g" .env
+
+      - name: "Check 6a: Start Compose services"
+        run: docker compose up -d --build redis runtime api worker
+
+      - name: "Check 6b: API health"
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error http://localhost:8000/health; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose logs api
+          exit 1
+
+      - name: "Check 6c: Runtime health"
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error http://localhost:8001/health; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose logs runtime
+          exit 1
+
+      - name: Show Compose logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Stop Compose services
+        if: always()
+        run: docker compose down --volumes --remove-orphans
+
+  secret-scan:
+    name: "7 Security: Secret Scan"
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "Check 7: Gitleaks secret scan"
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
