@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pentagi-api"
+version = "0.1.0"
+description = "FastAPI control plane for the autonomous security testing platform."
+requires-python = ">=3.11"
+dependencies = [
+    "alembic>=1.13.0",
+    "celery[redis]>=5.4.0",
+    "cryptography>=43.0.0",
+    "email-validator>=2.2.0",
+    "fastapi>=0.115.0",
+    "httpx>=0.27.0",
+    "psycopg[binary]>=3.2.0",
+    "pydantic-settings>=2.4.0",
+    "python-dotenv>=1.0.0",
+    "python-multipart>=0.0.9",
+    "sqlalchemy>=2.0.0",
+    "supabase>=2.7.0",
+    "uvicorn[standard]>=0.30.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=5.0.0",
+    "ruff>=0.6.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["apps/api/tests"]
+pythonpath = ["apps/api"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.setuptools.package-dir]
+"" = "apps/api"
+
+[tool.setuptools.packages.find]
+where = ["apps/api"]
+include = ["app*"]
