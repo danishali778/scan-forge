@@ -1,0 +1,62 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./apps/api/app:/app/apps/api/app
+    depends_on:
+      - redis
+      - runtime
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  worker:
+    build:
+      context: .
+      dockerfile: services/worker/Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - runtime
+    volumes:
+      - ./apps/api/app:/app/apps/api/app
+      - ./services/worker/worker:/app/worker
+    command: celery -A worker.celery_app worker --loglevel=INFO
+
+  runtime:
+    build:
+      context: .
+      dockerfile: services/runtime/Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8001:8001"
+    volumes:
+      - runtime_workspaces:/var/lib/pentagi-runtime
+      # Docker socket access belongs to the runtime service, not the worker.
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  runtime_workspaces:
