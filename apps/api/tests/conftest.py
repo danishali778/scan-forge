@@ -122,7 +122,7 @@ class FakeRuntimeClient:
             "status": "running",
             "workspace_path": "/workspace",
             "external_id": f"container-{runtime_id}",
-            "image": "pentagi-runtime-python:local",
+            "image": "scopeforge-runtime-python:local",
             "resource_limits": resource_limits or {},
         }
 

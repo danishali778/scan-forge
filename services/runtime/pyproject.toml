@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pentagi-runtime"
+name = "scopeforge-runtime"
 version = "0.1.0"
 description = "Internal runtime service for sandbox lifecycle and command execution."
 requires-python = ">=3.12"

@@ -397,7 +397,7 @@ class SessionService:
             runtime_id=runtime_id,
             workspace_id=workspace_id,
             session_id=session.id,
-            image="pentagi-runtime-python:local",
+            image="scopeforge-runtime-python:local",
             status="starting",
             resource_limits=resource_limits,
         )

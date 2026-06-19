@@ -38,7 +38,7 @@ class ApiTokenService:
         if request.expires_at is not None and self._is_past(request.expires_at):
             raise ConflictError("API token expiry must be in the future.")
 
-        raw_token = f"pgi_live_{generate_token()}"
+        raw_token = f"sfg_live_{generate_token()}"
         token = self.repository.create_token(
             workspace_id=uuid.UUID(auth.workspace_id),
             user_id=uuid.UUID(auth.user_id),

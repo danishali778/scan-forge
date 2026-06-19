@@ -126,7 +126,7 @@ def test_api_token_auth_lifecycle(client, db_session_factory):
     assert create_response.status_code == 201
     created = create_response.json()
     raw_token = created["token"]
-    assert raw_token.startswith("pgi_live_")
+    assert raw_token.startswith("sfg_live_")
 
     with db_session_factory() as db:
         stored = db.scalar(select(ApiToken).where(ApiToken.id == uuid.UUID(created["id"])))

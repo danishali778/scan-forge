@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_name: str = "Pentagi Rewrite API"
+    app_name: str = "ScopeForge API"
     app_version: str = "0.1.0"
     environment: str = "local"
     enable_docs: bool = True
@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     job_stale_seconds: int = 900
     agent_max_turns_per_job: int = 3
     artifact_storage_backend: str = "supabase"
-    supabase_storage_bucket: str = "pentagi-artifacts"
+    supabase_storage_bucket: str = "scopeforge-artifacts"
     evidence_inline_max_bytes: int = 32_768
     report_export_storage_prefix: str = "reports"
     memory_embedding_dimensions: int = 1536
