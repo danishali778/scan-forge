@@ -20,6 +20,20 @@ dist/
 *.log
 runtime-data/
 
+# Local frontend design and planning artifacts
+apps/web/FRONTEND_STRUCTURE.md
+apps/web/FRONTEND_TECH_STACK.md
+apps/web/design-images/
+apps/web/design-qa-comparison-final.png
+apps/web/design-qa-comparison.png
+apps/web/design-qa-implementation-clean.png
+apps/web/design-qa-implementation-final.png
+apps/web/design-qa-implementation-fullpage.png
+apps/web/design-qa-implementation-tall.png
+apps/web/design-qa-implementation.png
+apps/web/design-qa-source-command-center.png
+docs/design/UI_UX_FLOW.md
+
 # OS and editor
 .DS_Store
 Thumbs.db
