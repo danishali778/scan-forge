@@ -2,7 +2,13 @@ import { ArrowRight, Check, Circle, X } from 'lucide-react';
 
 import { checklistItems, guardrailSections, rolePermissions } from '../../mocks/new-assessment';
 
-export function GuardrailsPanel() {
+interface GuardrailsPanelProps {
+  errorMessage?: string;
+  isSaving?: boolean;
+  onSaveContinue: () => void;
+}
+
+export function GuardrailsPanel({ errorMessage, isSaving = false, onSaveContinue }: GuardrailsPanelProps) {
   return (
     <aside className="rounded-md border border-slate-200 bg-white shadow-sm">
       {guardrailSections.map((section) => (
@@ -69,8 +75,19 @@ export function GuardrailsPanel() {
           })}
         </div>
 
-        <button className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-md bg-teal-700 text-[15px] font-semibold text-white shadow-sm hover:bg-teal-800">
-          Save and continue
+        {errorMessage ? (
+          <div className="mt-5 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-[13px] font-medium text-red-700">
+            {errorMessage}
+          </div>
+        ) : null}
+
+        <button
+          type="button"
+          className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-md bg-teal-700 text-[15px] font-semibold text-white shadow-sm hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+          onClick={onSaveContinue}
+          disabled={isSaving}
+        >
+          {isSaving ? "Creating session..." : "Save and continue"}
           <ArrowRight className="h-4 w-4" />
         </button>
       </section>

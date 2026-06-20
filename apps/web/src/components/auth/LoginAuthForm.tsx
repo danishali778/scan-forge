@@ -6,12 +6,41 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { AuthMessageCard } from "@/components/auth/AuthMessageCard";
+import { loginSchema, type LoginFormValues } from "@/lib/validation";
 
-export function LoginAuthForm() {
+interface LoginAuthFormProps {
+  errorMessage?: string;
+  isSubmitting?: boolean;
+  onSubmit: (values: LoginFormValues) => Promise<void> | void;
+}
+
+export function LoginAuthForm({ errorMessage, isSubmitting = false, onSubmit }: LoginAuthFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberDevice, setRememberDevice] = useState(true);
+  const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const form = useForm<LoginFormValues>({
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const submit = form.handleSubmit(async (values) => {
+    const parsed = loginSchema.safeParse(values);
+
+    if (!parsed.success) {
+      setValidationMessage(parsed.error.issues[0]?.message ?? "Check your login details.");
+      return;
+    }
+
+    setValidationMessage(null);
+    await onSubmit(parsed.data);
+  });
+
+  const visibleError = validationMessage ?? errorMessage;
 
   return (
     <section className="mx-auto flex w-full max-w-[560px] flex-col px-6 py-10 sm:px-8 lg:px-0">
@@ -32,18 +61,16 @@ export function LoginAuthForm() {
 
       <form
         className="mt-8"
-        onSubmit={(event) => {
-          event.preventDefault();
-        }}
+        onSubmit={submit}
       >
         <label className="block" htmlFor="email">
           <span className="text-sm font-semibold text-slate-950">Email</span>
           <input
             className="mt-2 h-11 w-full rounded-md border border-sf-border bg-white px-4 text-base text-slate-950 outline-none transition focus:border-sf-running focus:ring-4 focus:ring-teal-600/10"
-            defaultValue="danish.ali@acme.com"
             id="email"
-            name="email"
+            placeholder="danish.ali@acme.com"
             type="email"
+            {...form.register("email")}
           />
         </label>
 
@@ -62,10 +89,10 @@ export function LoginAuthForm() {
           <span className="relative mt-2 block">
             <input
               className="h-11 w-full rounded-md border border-sf-border bg-white px-4 pr-12 text-base text-slate-950 outline-none transition focus:border-sf-running focus:ring-4 focus:ring-teal-600/10"
-              defaultValue="scopeforge-demo"
               id="password"
-              name="password"
+              placeholder="Enter your password"
               type={showPassword ? "text" : "password"}
+              {...form.register("password")}
             />
             <button
               aria-label={showPassword ? "Hide password" : "Show password"}
@@ -78,19 +105,22 @@ export function LoginAuthForm() {
           </span>
         </label>
 
-        <div className="mt-3 flex items-center gap-3 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
-          <span className="flex h-5 w-5 items-center justify-center rounded-full border border-red-500 text-xs">
-            !
-          </span>
-          Invalid email or password. Please try again.
-        </div>
+        {visibleError ? (
+          <div className="mt-3 flex items-center gap-3 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full border border-red-500 text-xs">
+              !
+            </span>
+            {visibleError}
+          </div>
+        ) : null}
 
         <button
-          className="mt-4 flex h-12 w-full items-center justify-center gap-3 rounded-md bg-sf-running px-4 text-base font-semibold text-white shadow-sm transition hover:bg-teal-800"
+          className="mt-4 flex h-12 w-full items-center justify-center gap-3 rounded-md bg-sf-running px-4 text-base font-semibold text-white shadow-sm transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-70"
+          disabled={isSubmitting}
           type="submit"
         >
           <LockKeyhole className="h-5 w-5" />
-          Sign in
+          {isSubmitting ? "Signing in..." : "Sign in"}
         </button>
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">

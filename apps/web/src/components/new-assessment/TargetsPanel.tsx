@@ -1,8 +1,8 @@
 import { MoreHorizontal, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import { targets } from '../../mocks/new-assessment';
-import type { TargetType } from '../../types/new-assessment';
+import { targets as mockTargets } from '../../mocks/new-assessment';
+import type { Target, TargetType } from '../../types/new-assessment';
 
 const targetTabs = ['All', 'Domain / URL', 'IP', 'CIDR', 'API', 'Cloud account'] as const;
 
@@ -18,7 +18,11 @@ function typeTone(type: TargetType) {
   return 'border-teal-300 bg-teal-50 text-teal-700';
 }
 
-export function TargetsPanel() {
+interface TargetsPanelProps {
+  targets?: Target[];
+}
+
+export function TargetsPanel({ targets = mockTargets }: TargetsPanelProps) {
   const [activeTab, setActiveTab] = useState<(typeof targetTabs)[number]>('All');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -147,9 +151,9 @@ export function TargetsPanel() {
       <div className="mt-5 flex items-center justify-between text-[13px] text-slate-500">
         <span>Showing 1 to {visibleTargets.length} of {visibleTargets.length} targets</span>
         <div className="flex items-center gap-2">
-          <button className="grid h-8 w-8 place-items-center rounded-md border border-slate-200 text-slate-300">‹</button>
+          <button className="grid h-8 w-8 place-items-center rounded-md border border-slate-200 text-slate-300">&lt;</button>
           <button className="grid h-8 w-8 place-items-center rounded-md border border-teal-700 text-teal-700">1</button>
-          <button className="grid h-8 w-8 place-items-center rounded-md border border-slate-200 text-slate-400">›</button>
+          <button className="grid h-8 w-8 place-items-center rounded-md border border-slate-200 text-slate-400">&gt;</button>
         </div>
       </div>
     </section>

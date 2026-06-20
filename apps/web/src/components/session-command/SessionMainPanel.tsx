@@ -10,6 +10,8 @@ import {
 
 import { recentEvents } from "@/mocks/session-command";
 import { StatusBadge } from "@/components/session-command/StatusBadge";
+import type { ApiSessionDetail } from "@/types/api";
+import type { SessionTask, TimelineEvent } from "@/types/session-command";
 
 const approvedScope = [
   "staging.acme.com",
@@ -42,19 +44,46 @@ function InfoCard({
   );
 }
 
-export function SessionMainPanel() {
+interface SessionMainPanelProps {
+  session?: ApiSessionDetail;
+  tasks?: SessionTask[];
+  events?: TimelineEvent[];
+  jobCount?: number;
+  toolCallCount?: number;
+}
+
+function currentStepFromTasks(tasks: SessionTask[]) {
+  return (
+    tasks.flatMap((task) => task.steps).find((step) => step.status === "running") ??
+    tasks.flatMap((task) => task.steps).find((step) => step.status === "pending") ??
+    tasks[0]?.steps[0]
+  );
+}
+
+export function SessionMainPanel({
+  session,
+  tasks = [],
+  events = recentEvents,
+  jobCount = 2,
+  toolCallCount = 3,
+}: SessionMainPanelProps) {
+  const taskList = tasks.length > 0 ? tasks : [];
+  const currentStep = currentStepFromTasks(taskList);
+  const heading = currentStep ? `${currentStep.index} ${currentStep.title}` : session?.title ?? "2.1 Map attack surface";
+  const stepStatus = currentStep?.status === "running" ? "in_progress" : currentStep?.status ?? "in_progress";
+
   return (
     <main className="min-w-[650px] flex-1 overflow-y-auto bg-[#fbfcfd]">
       <div className="border-b border-slate-200 bg-white px-7 py-5">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-semibold tracking-tight text-slate-950">
-              2.1 Map attack surface
+              {heading}
             </h1>
-            <StatusBadge status="in_progress" />
+            <StatusBadge status={stepStatus} />
             <span className="inline-flex items-center gap-1.5 text-sm text-slate-500">
               <Clock3 className="h-4 w-4" />
-              12m 34s
+              {currentStep?.duration ?? "Live"}
             </span>
           </div>
           <button
@@ -78,12 +107,12 @@ export function SessionMainPanel() {
               {tab}
               {tab === "Tool calls" ? (
                 <span className="ml-2 rounded-md border border-slate-200 px-1.5 py-0.5 text-xs text-slate-500">
-                  3
+                  {toolCallCount}
                 </span>
               ) : null}
               {tab === "Jobs" ? (
                 <span className="ml-2 rounded-md border border-slate-200 px-1.5 py-0.5 text-xs text-slate-500">
-                  2
+                  {jobCount}
                 </span>
               ) : null}
               {index === 0 ? (
@@ -98,8 +127,8 @@ export function SessionMainPanel() {
         <div className="grid grid-cols-[minmax(0,1fr)_230px] gap-6">
           <InfoCard title="Objective">
             <p className="text-sm leading-6 text-slate-600">
-              Enumerate the externally reachable attack surface for the Acme staging
-              environment and identify key entry points.
+              {session?.objective ??
+                "Enumerate the externally reachable attack surface for the Acme staging environment and identify key entry points."}
             </p>
           </InfoCard>
 
@@ -167,7 +196,7 @@ export function SessionMainPanel() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {recentEvents.map((event) => (
+                {events.map((event) => (
                   <tr key={`${event.time}-${event.event}`}>
                     <td className="px-4 py-3 font-mono text-xs text-slate-600">{event.time}</td>
                     <td className="px-4 py-3">
