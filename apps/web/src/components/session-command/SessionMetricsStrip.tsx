@@ -22,11 +22,15 @@ function Sparkline({ item }: { item: MetricItem }) {
   );
 }
 
-export function SessionMetricsStrip() {
+interface SessionMetricsStripProps {
+  metrics?: MetricItem[];
+}
+
+export function SessionMetricsStrip({ metrics = metricItems }: SessionMetricsStripProps) {
   return (
     <footer className="shrink-0 border-t border-slate-200 bg-white px-6 py-4">
       <div className="grid min-w-[1200px] grid-cols-6 divide-x divide-slate-200">
-        {metricItems.map((item) => {
+        {metrics.map((item) => {
           const Icon = item.icon;
 
           return (

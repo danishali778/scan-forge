@@ -1,4 +1,19 @@
-export function ProjectDetailsPanel() {
+export interface ProjectDetailsValues {
+  name: string;
+  reference: string;
+  description: string;
+}
+
+interface ProjectDetailsPanelProps {
+  values: ProjectDetailsValues;
+  onChange: (values: ProjectDetailsValues) => void;
+}
+
+export function ProjectDetailsPanel({ values, onChange }: ProjectDetailsPanelProps) {
+  const updateField = (field: keyof ProjectDetailsValues, value: string) => {
+    onChange({ ...values, [field]: value });
+  };
+
   return (
     <section className="rounded-md border border-slate-200 bg-white p-6 shadow-sm">
       <h2 className="text-[18px] font-semibold text-slate-950">Project details</h2>
@@ -7,16 +22,16 @@ export function ProjectDetailsPanel() {
           <span className="text-[13px] font-medium text-slate-900">Project name</span>
           <input
             className="mt-2 h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-[14px] text-slate-800 shadow-inner outline-none ring-teal-600 transition focus:ring-2"
-            value="Staging Web Assessment"
-            readOnly
+            value={values.name}
+            onChange={(event) => updateField("name", event.target.value)}
           />
         </label>
         <label className="block">
           <span className="text-[13px] font-medium text-slate-900">Assessment reference (optional)</span>
           <input
             className="mt-2 h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-[14px] text-slate-800 shadow-inner outline-none ring-teal-600 transition focus:ring-2"
-            value="ACME-STG-WEB-2026-06"
-            readOnly
+            value={values.reference}
+            onChange={(event) => updateField("reference", event.target.value)}
           />
         </label>
       </div>
@@ -24,8 +39,8 @@ export function ProjectDetailsPanel() {
         <span className="text-[13px] font-medium text-slate-900">Description (optional)</span>
         <textarea
           className="mt-2 h-[82px] w-full resize-none rounded-md border border-slate-300 bg-white px-3 py-3 text-[14px] text-slate-800 shadow-inner outline-none ring-teal-600 transition focus:ring-2"
-          value="Authorized security assessment of ACME staging web applications and APIs."
-          readOnly
+          value={values.description}
+          onChange={(event) => updateField("description", event.target.value)}
         />
       </label>
     </section>

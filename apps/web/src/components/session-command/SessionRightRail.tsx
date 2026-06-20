@@ -8,6 +8,9 @@ import {
 } from "lucide-react";
 
 import { approvalItems, liveEvents, memoryItems } from "@/mocks/session-command";
+import { humanizeStatus } from "@/lib/formatters";
+import type { ApiRuntimeInstance } from "@/types/api";
+import type { LiveEvent } from "@/types/session-command";
 
 function RailCard({
   title,
@@ -29,7 +32,15 @@ function RailCard({
   );
 }
 
-export function SessionRightRail() {
+interface SessionRightRailProps {
+  liveEventItems?: LiveEvent[];
+  runtime?: ApiRuntimeInstance | null;
+}
+
+export function SessionRightRail({ liveEventItems = liveEvents, runtime }: SessionRightRailProps) {
+  const runtimeStatus = runtime?.status ?? "running";
+  const runtimeIsHealthy = ["running", "starting"].includes(runtimeStatus);
+
   return (
     <aside className="w-[360px] shrink-0 space-y-4 overflow-y-auto border-l border-slate-200 bg-[#fbfcfd] p-4">
       <RailCard
@@ -42,7 +53,7 @@ export function SessionRightRail() {
         }
       >
         <div className="overflow-hidden rounded-lg border border-slate-200">
-          {liveEvents.map((event, index) => (
+          {liveEventItems.map((event, index) => (
             <div
               key={`${event.time}-${event.event}`}
               className={`grid grid-cols-[68px_1fr] gap-3 px-3 py-3 text-sm ${
@@ -70,17 +81,21 @@ export function SessionRightRail() {
       <RailCard
         title="Runtime"
         action={
-          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700">
+          <span
+            className={`inline-flex items-center gap-1.5 text-sm font-semibold ${
+              runtimeIsHealthy ? "text-emerald-700" : "text-slate-600"
+            }`}
+          >
             <CheckCircle2 className="h-4 w-4" />
-            Healthy
+            {runtimeIsHealthy ? "Healthy" : humanizeStatus(runtimeStatus)}
           </span>
         }
       >
         <div className="space-y-3 text-sm">
           {[
-            ["Container", "sf-runtime-7c9d2e1f"],
-            ["Uptime", "01:24:37"],
-            ["CPU / Memory", "18% / 412MB (limit 2GB)"],
+            ["Container", runtime?.external_id ?? "Not started"],
+            ["Status", humanizeStatus(runtimeStatus)],
+            ["Image", runtime?.image ?? "scopeforge-runtime-python:local"],
             ["Network", "Isolated (none)"],
           ].map(([label, value]) => (
             <div key={label} className="grid grid-cols-[100px_1fr] gap-3">

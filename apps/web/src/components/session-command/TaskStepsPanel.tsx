@@ -1,6 +1,7 @@
 import { CheckCircle2, ChevronDown, Circle, Play, Plus } from "lucide-react";
 
 import { sessionTasks } from "@/mocks/session-command";
+import type { SessionTask } from "@/types/session-command";
 
 function ProgressRing({ status }: { status: "completed" | "in_progress" | "pending" }) {
   if (status === "completed") {
@@ -14,20 +15,28 @@ function ProgressRing({ status }: { status: "completed" | "in_progress" | "pendi
   return <Circle className="h-5 w-5 text-slate-400" />;
 }
 
-export function TaskStepsPanel() {
+interface TaskStepsPanelProps {
+  tasks?: SessionTask[];
+}
+
+export function TaskStepsPanel({ tasks = sessionTasks }: TaskStepsPanelProps) {
+  const totalSteps = tasks.reduce((count, task) => count + task.totalCount, 0);
+  const completedSteps = tasks.reduce((count, task) => count + task.completeCount, 0);
+  const progressPercent = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
+
   return (
     <section className="flex w-[370px] shrink-0 flex-col border-r border-slate-200 bg-white">
       <div className="border-b border-slate-200 px-5 py-5">
         <h2 className="text-base font-semibold text-slate-950">Tasks &amp; steps</h2>
-        <div className="mt-3 text-sm text-slate-500">33% complete</div>
+        <div className="mt-3 text-sm text-slate-500">{progressPercent}% complete</div>
         <div className="mt-3 h-2 rounded-full bg-slate-200">
-          <div className="h-2 w-1/3 rounded-full bg-teal-600" />
+          <div className="h-2 rounded-full bg-teal-600" style={{ width: `${progressPercent}%` }} />
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
         <div className="overflow-hidden rounded-lg border border-slate-200">
-          {sessionTasks.map((task, taskIndex) => (
+          {tasks.map((task, taskIndex) => (
             <div key={task.id} className={taskIndex > 0 ? "border-t border-slate-200" : ""}>
               <div className="flex items-center gap-3 bg-white px-4 py-4">
                 <ChevronDown className="h-4 w-4 text-slate-600" />
@@ -84,7 +93,7 @@ export function TaskStepsPanel() {
                           {isCompleted
                             ? "Completed"
                             : isRunning
-                              ? `In progress • ${step.duration}`
+                              ? `In progress - ${step.duration ?? "Active"}`
                               : "Pending"}
                         </span>
                       </span>
