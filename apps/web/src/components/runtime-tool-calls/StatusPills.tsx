@@ -27,6 +27,8 @@ export function ToolStatusPill({ status }: { status: ToolCallStatus }) {
     running: "bg-sky-50 text-sky-700 ring-sky-200",
     queued: "bg-blue-50 text-blue-700 ring-blue-200",
     failed: "bg-red-50 text-red-700 ring-red-200",
+    timed_out: "bg-red-50 text-red-700 ring-red-200",
+    cancelled: "bg-slate-100 text-slate-700 ring-slate-200",
     denied: "bg-red-50 text-red-700 ring-red-200",
   }[status];
 

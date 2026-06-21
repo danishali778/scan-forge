@@ -1,10 +1,10 @@
-export type RuntimeStatus = "running" | "stopped" | "starting";
+export type RuntimeStatus = "starting" | "running" | "stopping" | "stopped" | "failed" | "unhealthy";
 
 export type RuntimeHealth = "healthy" | "degraded" | "unhealthy";
 
 export type RuntimeMode = "assisted" | "autonomous";
 
-export type ToolCallStatus = "queued" | "running" | "succeeded" | "failed" | "denied";
+export type ToolCallStatus = "queued" | "running" | "succeeded" | "failed" | "timed_out" | "cancelled" | "denied";
 
 export type PolicyDecision = "allow" | "require_approval" | "denied";
 

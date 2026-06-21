@@ -6,7 +6,9 @@ import {
   Server,
   ShieldCheck,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
+import { appRoutes } from "@/app/routes";
 import { approvalItems, liveEvents, memoryItems } from "@/mocks/session-command";
 import { humanizeStatus } from "@/lib/formatters";
 import type { ApiRuntimeInstance } from "@/types/api";
@@ -35,9 +37,10 @@ function RailCard({
 interface SessionRightRailProps {
   liveEventItems?: LiveEvent[];
   runtime?: ApiRuntimeInstance | null;
+  sessionId?: string;
 }
 
-export function SessionRightRail({ liveEventItems = liveEvents, runtime }: SessionRightRailProps) {
+export function SessionRightRail({ liveEventItems = liveEvents, runtime, sessionId }: SessionRightRailProps) {
   const runtimeStatus = runtime?.status ?? "running";
   const runtimeIsHealthy = ["running", "starting"].includes(runtimeStatus);
 
@@ -110,9 +113,15 @@ export function SessionRightRail({ liveEventItems = liveEvents, runtime }: Sessi
             <ShieldCheck className="ml-auto h-4 w-4 text-slate-500" />
           </div>
         </div>
-        <button type="button" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-teal-700">
-          View runtime details
-        </button>
+        {sessionId ? (
+          <Link to={appRoutes.runtimeSession(sessionId)} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-teal-700">
+            View runtime details
+          </Link>
+        ) : (
+          <button type="button" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-teal-700">
+            View runtime details
+          </button>
+        )}
       </RailCard>
 
       <div className="grid grid-cols-2 gap-4">

@@ -87,12 +87,24 @@ export function RuntimeFilesPanel({ fileTree, recentWrites }: { fileTree: FileNo
           <div className="h-[calc(100%-48px)] overflow-auto p-4">
             {activeTab === "files" ? (
               <div className="space-y-1">
-                {fileTree.map((node) => (
-                  <FileTreeNode key={node.id} node={node} />
-                ))}
+                {fileTree.length > 0 ? (
+                  fileTree.map((node) => (
+                    <FileTreeNode key={node.id} node={node} />
+                  ))
+                ) : (
+                  <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500">
+                    No runtime files available.
+                  </div>
+                )}
               </div>
             ) : (
-              <RecentWritesList writes={recentWrites} />
+              recentWrites.length > 0 ? (
+                <RecentWritesList writes={recentWrites} />
+              ) : (
+                <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500">
+                  No recent file writes.
+                </div>
+              )
             )}
           </div>
         </div>
@@ -113,7 +125,7 @@ export function RuntimeFilesPanel({ fileTree, recentWrites }: { fileTree: FileNo
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {recentWrites.map((write) => (
+                {recentWrites.length > 0 ? recentWrites.map((write) => (
                   <tr key={`${write.path}-${write.toolCallId}`}>
                     <td className="max-w-[320px] truncate py-3 pr-4 font-mono text-xs text-slate-800">{write.path}</td>
                     <td className="px-4 py-3 text-slate-700">{write.size}</td>
@@ -121,7 +133,13 @@ export function RuntimeFilesPanel({ fileTree, recentWrites }: { fileTree: FileNo
                     <td className="px-4 py-3 font-mono text-xs text-slate-700">{write.toolCallId}</td>
                     <td className="pl-4 py-3 text-slate-700">{write.actor}</td>
                   </tr>
-                ))}
+                )) : (
+                  <tr>
+                    <td colSpan={5} className="py-10 text-center text-sm text-slate-500">
+                      No file writes have been recorded for this session.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

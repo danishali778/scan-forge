@@ -3,6 +3,7 @@ import type {
   ApiJob,
   ApiRuntimeInstance,
   ApiSessionDetail,
+  ApiSessionSummary,
   ApiSessionEvent,
   ApiTask,
   ApiToolCall,
@@ -15,6 +16,10 @@ export function createSession(request: SessionCreateRequest): Promise<ApiSession
     method: "POST",
     body: request,
   });
+}
+
+export function listSessions(): Promise<Page<ApiSessionSummary>> {
+  return apiRequest<Page<ApiSessionSummary>>("/sessions");
 }
 
 export function getSession(sessionId: string): Promise<ApiSessionDetail> {

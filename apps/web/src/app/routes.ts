@@ -7,6 +7,7 @@ export const appRoutes = {
   sessions: "/sessions",
   session: (sessionId: string) => `/sessions/${sessionId}`,
   runtime: "/runtime",
+  runtimeSession: (sessionId: string) => `/runtime?session_id=${encodeURIComponent(sessionId)}`,
   approvals: "/approvals",
   evidence: "/evidence",
   reports: "/reports",

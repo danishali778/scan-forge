@@ -5,9 +5,23 @@ import type { RuntimeToolCallsData } from "@/types/runtime-tool-calls";
 
 type RuntimeHeaderProps = {
   data: Pick<RuntimeToolCallsData, "breadcrumb" | "status" | "health" | "mode">;
+  isMutating?: boolean;
+  canUseRuntime?: boolean;
+  onRefresh?: () => void;
+  onStartRuntime?: () => void;
+  onStopRuntime?: () => void;
+  onRequestCommand?: () => void;
 };
 
-export function RuntimeHeader({ data }: RuntimeHeaderProps) {
+export function RuntimeHeader({
+  data,
+  isMutating = false,
+  canUseRuntime = true,
+  onRefresh,
+  onStartRuntime,
+  onStopRuntime,
+  onRequestCommand,
+}: RuntimeHeaderProps) {
   return (
     <header className="shrink-0 border-b border-slate-200 bg-white">
       <div className="flex h-[56px] items-center justify-between px-7">
@@ -43,12 +57,15 @@ export function RuntimeHeader({ data }: RuntimeHeaderProps) {
             type="button"
             className="grid h-10 w-10 place-items-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50"
             aria-label="Refresh runtime"
+            onClick={onRefresh}
           >
             <RefreshCw className="h-4 w-4" />
           </button>
           <button
             type="button"
             className="inline-flex h-10 items-center gap-2 rounded-md border border-teal-300 bg-white px-4 text-sm font-semibold text-teal-800 shadow-sm transition hover:bg-teal-50"
+            onClick={onStartRuntime}
+            disabled={!canUseRuntime || !onStartRuntime || isMutating}
           >
             <Play className="h-4 w-4" />
             Start runtime
@@ -56,6 +73,8 @@ export function RuntimeHeader({ data }: RuntimeHeaderProps) {
           <button
             type="button"
             className="inline-flex h-10 items-center gap-2 rounded-md border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-600 transition hover:bg-red-100"
+            onClick={onStopRuntime}
+            disabled={!canUseRuntime || !onStopRuntime || isMutating}
           >
             <Square className="h-3.5 w-3.5" />
             Stop runtime
@@ -63,6 +82,8 @@ export function RuntimeHeader({ data }: RuntimeHeaderProps) {
           <button
             type="button"
             className="inline-flex h-10 items-center gap-2 rounded-md border border-teal-900 bg-teal-900 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800"
+            onClick={onRequestCommand}
+            disabled={!canUseRuntime || !onRequestCommand || isMutating}
           >
             <Terminal className="h-4 w-4" />
             Request command
