@@ -16,7 +16,9 @@ import {
   SquareTerminal,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 
+import { getNavPath, isNavPathActive } from "@/app/routes";
 import type { RuntimeToolCallsData } from "@/types/runtime-tool-calls";
 
 type SidebarItem = {
@@ -43,6 +45,7 @@ const sidebarItems: SidebarItem[] = [
 ];
 
 export function RuntimeSidebar({ data }: { data: Pick<RuntimeToolCallsData, "workspaceName" | "userName" | "userEmail"> }) {
+  const location = useLocation();
   const initials = data.userName
     .split(" ")
     .map((part) => part[0])
@@ -78,18 +81,16 @@ export function RuntimeSidebar({ data }: { data: Pick<RuntimeToolCallsData, "wor
       <nav className="mt-5 flex-1 space-y-1 px-4">
         {sidebarItems.map((item) => {
           const Icon = item.icon;
-
-          return (
-            <button
-              type="button"
-              key={item.label}
-              className={[
-                "flex h-11 w-full items-center justify-between rounded-md px-3 text-sm font-semibold transition",
-                item.active ? "bg-teal-50 text-teal-800" : "text-slate-700 hover:bg-slate-50",
-              ].join(" ")}
-            >
+          const path = getNavPath(item.label);
+          const active = path ? isNavPathActive(item.label, location.pathname) : item.active;
+          const className = [
+            "flex h-11 w-full items-center justify-between rounded-md px-3 text-sm font-semibold transition",
+            active ? "bg-teal-50 text-teal-800" : "text-slate-700 hover:bg-slate-50",
+          ].join(" ");
+          const content = (
+            <>
               <span className="flex min-w-0 items-center gap-3">
-                <Icon className={item.active ? "h-5 w-5 text-teal-700" : "h-5 w-5 text-slate-500"} />
+                <Icon className={active ? "h-5 w-5 text-teal-700" : "h-5 w-5 text-slate-500"} />
                 <span className="truncate">{item.label}</span>
               </span>
               {item.badge ? (
@@ -102,6 +103,16 @@ export function RuntimeSidebar({ data }: { data: Pick<RuntimeToolCallsData, "wor
                   {item.badge}
                 </span>
               ) : null}
+            </>
+          );
+
+          return path ? (
+            <Link key={item.label} to={path} className={className}>
+              {content}
+            </Link>
+          ) : (
+            <button type="button" key={item.label} className={className}>
+              {content}
             </button>
           );
         })}

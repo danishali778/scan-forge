@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
+import { appRoutes } from "@/app/routes";
 import { SessionDetailsPanel } from "@/components/sessions-list/SessionDetailsPanel";
 import { SessionsFilters } from "@/components/sessions-list/SessionsFilters";
 import { SessionsListHeader } from "@/components/sessions-list/SessionsListHeader";
@@ -13,6 +15,7 @@ import type { SessionStatusTabKey, SessionsListSession } from "@/types/sessions-
 const PAGE_SIZE = 10;
 
 export function SessionsListPage() {
+  const navigate = useNavigate();
   const [globalSearch, setGlobalSearch] = useState("");
   const [search, setSearch] = useState("");
   const [project, setProject] = useState("All projects");
@@ -75,6 +78,10 @@ export function SessionsListPage() {
     );
   };
 
+  const handleOpenSession = (sessionId: string) => {
+    navigate(appRoutes.session(sessionId));
+  };
+
   return (
     <div className="h-screen overflow-hidden bg-[#f8faf9] text-slate-900">
       <div className="flex h-full min-w-[1440px]">
@@ -118,6 +125,7 @@ export function SessionsListPage() {
                     pageSize={PAGE_SIZE}
                     onPageChange={setPage}
                     onSelectSession={handleSelectSession}
+                    onOpenSession={handleOpenSession}
                     onToggleFavorite={handleToggleFavorite}
                   />
                   <SessionsOverview />
@@ -129,6 +137,7 @@ export function SessionsListPage() {
               session={selectedSession}
               actionState={actionState}
               onActionStateChange={setActionState}
+              onOpenSession={handleOpenSession}
             />
           </div>
         </main>

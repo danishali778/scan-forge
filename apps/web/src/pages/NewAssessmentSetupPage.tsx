@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { appRoutes } from '../app/routes';
 import { DraftsAndReadiness } from '../components/new-assessment/DraftsAndReadiness';
 import { GuardrailsPanel } from '../components/new-assessment/GuardrailsPanel';
 import { NewAssessmentHeader } from '../components/new-assessment/NewAssessmentHeader';
@@ -34,7 +35,7 @@ export function NewAssessmentSetupPage() {
       },
       {
         onSuccess: (session) => {
-          navigate(`/sessions/${session.id}`);
+          navigate(appRoutes.session(session.id));
         },
       }
     );

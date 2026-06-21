@@ -5,10 +5,14 @@ import {
   Hexagon,
   User,
 } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 
+import { getNavPath, isNavPathActive } from '../../app/routes';
 import { navigationItems } from '../../mocks/new-assessment';
 
 export function NewAssessmentSidebar() {
+  const location = useLocation();
+
   return (
     <aside className="flex min-h-screen w-[260px] shrink-0 flex-col bg-[#101f2e] text-slate-100 shadow-xl">
       <div className="flex h-[72px] items-center gap-3 px-6">
@@ -31,17 +35,16 @@ export function NewAssessmentSidebar() {
         <div className="space-y-1">
           {navigationItems.slice(0, 8).map((item) => {
             const Icon = item.icon;
-
-            return (
-              <button
-                key={item.label}
-                className={[
-                  'flex h-11 w-full items-center justify-between rounded-md px-3 text-[14px] font-medium transition',
-                  item.active
-                    ? 'bg-teal-700/70 text-white shadow-[inset_3px_0_0_#2dd4bf]'
-                    : 'text-slate-200 hover:bg-white/8',
-                ].join(' ')}
-              >
+            const path = getNavPath(item.label);
+            const active = path ? isNavPathActive(item.label, location.pathname) : item.active;
+            const className = [
+              'flex h-11 w-full items-center justify-between rounded-md px-3 text-[14px] font-medium transition',
+              active
+                ? 'bg-teal-700/70 text-white shadow-[inset_3px_0_0_#2dd4bf]'
+                : 'text-slate-200 hover:bg-white/8',
+            ].join(' ');
+            const content = (
+              <>
                 <span className="flex items-center gap-3">
                   <Icon className="h-4.5 w-4.5" />
                   {item.label}
@@ -56,6 +59,16 @@ export function NewAssessmentSidebar() {
                     {item.badge}
                   </span>
                 ) : null}
+              </>
+            );
+
+            return path ? (
+              <Link key={item.label} to={path} className={className}>
+                {content}
+              </Link>
+            ) : (
+              <button key={item.label} type="button" className={className}>
+                {content}
               </button>
             );
           })}
@@ -64,14 +77,26 @@ export function NewAssessmentSidebar() {
         <div className="mt-5 border-t border-white/12 pt-4">
           {navigationItems.slice(8).map((item) => {
             const Icon = item.icon;
-
-            return (
-              <button
-                key={item.label}
-                className="flex h-11 w-full items-center gap-3 rounded-md px-3 text-[14px] font-medium text-slate-200 transition hover:bg-white/8"
-              >
+            const path = getNavPath(item.label);
+            const active = path ? isNavPathActive(item.label, location.pathname) : item.active;
+            const className = [
+              'flex h-11 w-full items-center gap-3 rounded-md px-3 text-[14px] font-medium transition',
+              active ? 'bg-teal-700/70 text-white' : 'text-slate-200 hover:bg-white/8',
+            ].join(' ');
+            const content = (
+              <>
                 <Icon className="h-4.5 w-4.5" />
                 {item.label}
+              </>
+            );
+
+            return path ? (
+              <Link key={item.label} to={path} className={className}>
+                {content}
+              </Link>
+            ) : (
+              <button key={item.label} type="button" className={className}>
+                {content}
               </button>
             );
           })}

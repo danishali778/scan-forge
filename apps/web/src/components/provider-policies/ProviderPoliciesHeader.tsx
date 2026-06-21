@@ -1,5 +1,7 @@
 import { Bell, ChevronDown, HelpCircle, Plus } from "lucide-react";
+import { Link } from "react-router-dom";
 
+import { getSettingsTabPath } from "@/app/routes";
 import { settingsTabs } from "@/mocks/provider-policies";
 
 export function ProviderPoliciesHeader() {
@@ -37,20 +39,30 @@ export function ProviderPoliciesHeader() {
 
       <div className="flex h-14 items-center justify-between px-6">
         <nav className="flex h-full items-end gap-8">
-          {settingsTabs.map((tab) => (
-            <button
-              key={tab}
-              className={[
+          {settingsTabs.map((tab) => {
+            const tabPath = getSettingsTabPath(tab);
+            const active = tab === "Provider profiles" || tab === "Policies";
+            const className = [
                 "relative h-full px-0 text-sm font-medium",
-                tab === "Provider profiles" ? "text-teal-800" : "text-slate-600",
-              ].join(" ")}
-            >
-              {tab}
-              {tab === "Provider profiles" ? (
-                <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-teal-700" />
-              ) : null}
-            </button>
-          ))}
+                active ? "text-teal-800" : "text-slate-600",
+            ].join(" ");
+            const content = (
+              <>
+                {tab}
+                {active ? <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-teal-700" /> : null}
+              </>
+            );
+
+            return tabPath && tabPath !== "/settings/providers" ? (
+              <Link key={tab} to={tabPath} className={className}>
+                {content}
+              </Link>
+            ) : (
+              <button key={tab} type="button" className={className}>
+                {content}
+              </button>
+            );
+          })}
         </nav>
         <div className="flex gap-3">
           <button className="inline-flex h-10 items-center gap-2 rounded-md bg-teal-700 px-4 text-sm font-semibold text-white shadow-sm">

@@ -21,9 +21,10 @@ type SessionDetailsPanelProps = {
   session: SessionsListSession;
   actionState: "idle" | "paused" | "stopped";
   onActionStateChange: (state: "idle" | "paused" | "stopped") => void;
+  onOpenSession: (sessionId: string) => void;
 };
 
-export function SessionDetailsPanel({ session, actionState, onActionStateChange }: SessionDetailsPanelProps) {
+export function SessionDetailsPanel({ session, actionState, onActionStateChange, onOpenSession }: SessionDetailsPanelProps) {
   return (
     <aside className="flex w-[300px] shrink-0 flex-col border-l border-slate-200 bg-white">
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-5">
@@ -136,6 +137,7 @@ export function SessionDetailsPanel({ session, actionState, onActionStateChange 
           <button
             type="button"
             className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white text-[13px] font-semibold text-slate-700 hover:bg-slate-50"
+            onClick={() => onOpenSession(session.id)}
           >
             Open in workbench
             <ChevronRight className="h-4 w-4" />

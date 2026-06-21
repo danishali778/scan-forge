@@ -1,5 +1,7 @@
 import { ChevronDown, MoreHorizontal, Shield } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 
+import { getNavPath, isNavPathActive } from "@/app/routes";
 import type { ReportNavItem } from "@/types/report-builder";
 
 type ReportBuilderSidebarProps = {
@@ -7,6 +9,8 @@ type ReportBuilderSidebarProps = {
 };
 
 export function ReportBuilderSidebar({ navigation }: ReportBuilderSidebarProps) {
+  const location = useLocation();
+
   return (
     <aside className="flex h-screen w-[190px] shrink-0 flex-col bg-[#0b1d2a] text-slate-200">
       <div className="flex h-[64px] items-center gap-3 px-5">
@@ -37,17 +41,15 @@ export function ReportBuilderSidebar({ navigation }: ReportBuilderSidebarProps) 
       <nav className="flex-1 space-y-1 px-3 py-2">
         {navigation.map((item) => {
           const Icon = item.icon;
-
-          return (
-            <button
-              key={item.label}
-              type="button"
-              className={`flex h-11 w-full items-center gap-3 rounded-md px-3 text-left text-sm font-medium transition ${
-                item.active
-                  ? "bg-teal-500/20 text-teal-50 shadow-[inset_3px_0_0_#2dd4bf]"
-                  : "text-slate-300 hover:bg-white/5 hover:text-white"
-              }`}
-            >
+          const path = getNavPath(item.label);
+          const active = path ? isNavPathActive(item.label, location.pathname) : item.active;
+          const className = `flex h-11 w-full items-center gap-3 rounded-md px-3 text-left text-sm font-medium transition ${
+            active
+              ? "bg-teal-500/20 text-teal-50 shadow-[inset_3px_0_0_#2dd4bf]"
+              : "text-slate-300 hover:bg-white/5 hover:text-white"
+          }`;
+          const content = (
+            <>
               <Icon className="h-5 w-5 shrink-0" />
               <span className="min-w-0 flex-1 truncate">{item.label}</span>
               {item.badge ? (
@@ -59,6 +61,16 @@ export function ReportBuilderSidebar({ navigation }: ReportBuilderSidebarProps) 
                   {item.badge}
                 </span>
               ) : null}
+            </>
+          );
+
+          return path ? (
+            <Link key={item.label} to={path} className={className}>
+              {content}
+            </Link>
+          ) : (
+            <button key={item.label} type="button" className={className}>
+              {content}
             </button>
           );
         })}
