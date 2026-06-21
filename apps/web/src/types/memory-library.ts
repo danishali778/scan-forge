@@ -66,3 +66,51 @@ export type MemoryFilterState = {
 };
 
 export type MemorySearchVisibility = "All" | MemoryVisibility;
+
+export type ApiMemoryDocument = {
+  id: string;
+  project_id: string | null;
+  session_id: string | null;
+  source_evidence_id: string | null;
+  source_finding_id: string | null;
+  provider_profile_id: string | null;
+  title: string;
+  summary: string;
+  content: string;
+  source_type: string;
+  visibility: string;
+  status: string;
+  embedding_status: string;
+  secret_scan_status: string;
+  metadata: Record<string, unknown>;
+  created_by: string | null;
+  reviewed_by: string | null;
+  review_note: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ApiMemorySearchResult = {
+  document_id: string;
+  chunk_id: string;
+  title: string;
+  summary: string;
+  content: string;
+  visibility: string;
+  score: number;
+  source_type: string;
+};
+
+export type MemorySearchRequest = {
+  query: string;
+  project_id?: string | null;
+  session_id?: string | null;
+  visibility?: string[];
+  limit?: number | null;
+  provider_profile_id?: string | null;
+};
+
+export type MemorySearchResponse = {
+  items: ApiMemorySearchResult[];
+};
