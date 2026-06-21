@@ -97,7 +97,7 @@ export function ToolCallsTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {toolCalls.map((toolCall) => {
+            {toolCalls.length > 0 ? toolCalls.map((toolCall) => {
               const isSelected = toolCall.id === selectedToolCallId;
 
               return (
@@ -128,14 +128,21 @@ export function ToolCallsTable({
                   <td className="px-4 py-3 text-slate-700">{toolCall.created}</td>
                 </tr>
               );
-            })}
+            }) : (
+              <tr>
+                <td colSpan={8} className="px-4 py-12 text-center">
+                  <div className="text-sm font-semibold text-slate-800">No tool calls yet</div>
+                  <div className="mt-1 text-sm text-slate-500">Start the runtime or request a terminal command to create the first call.</div>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
       <div className="flex h-[58px] items-center justify-between border-t border-slate-100 px-5 text-sm text-slate-600">
         <span>
-          1 - {toolCalls.length} of {activeFilterCount}
+          {toolCalls.length > 0 ? 1 : 0} - {toolCalls.length} of {activeFilterCount}
         </span>
         <div className="flex items-center gap-1">
           <button

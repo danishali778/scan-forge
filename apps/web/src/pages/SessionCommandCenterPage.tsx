@@ -121,7 +121,7 @@ export function SessionCommandCenterPage() {
               jobCount={commandCenter.jobs.length}
               toolCallCount={commandCenter.toolCalls.length}
             />
-            <SessionRightRail liveEventItems={liveEventItems} runtime={commandCenter.runtime} />
+            <SessionRightRail liveEventItems={liveEventItems} runtime={commandCenter.runtime} sessionId={sessionId} />
           </div>
 
           <SessionMetricsStrip metrics={metrics} />

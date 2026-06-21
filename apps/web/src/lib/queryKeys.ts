@@ -22,6 +22,8 @@ export const queryKeys = {
     events: (sessionId: string) => ["sessions", sessionId, "events"] as const,
     runtime: (sessionId: string) => ["sessions", sessionId, "runtime"] as const,
     toolCalls: (sessionId: string) => ["sessions", sessionId, "tool-calls"] as const,
+    files: (sessionId: string, path: string) => ["sessions", sessionId, "files", path] as const,
+    fileContent: (sessionId: string, path: string) => ["sessions", sessionId, "files", "content", path] as const,
   },
 } as const;
 

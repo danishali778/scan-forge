@@ -211,3 +211,38 @@ export interface ApiToolCall {
   started_at: string | null;
   completed_at: string | null;
 }
+
+export interface TerminalCommandRequest {
+  command: string[];
+  cwd?: string;
+  timeout_seconds?: number | null;
+  max_output_bytes?: number | null;
+}
+
+export interface RuntimeFileEntry {
+  name: string;
+  path: string;
+  type: string;
+  size_bytes: number | null;
+}
+
+export interface RuntimeFileListResponse {
+  path: string;
+  entries: RuntimeFileEntry[];
+}
+
+export interface RuntimeFileContentResponse {
+  path: string;
+  content: string;
+  size_bytes: number;
+}
+
+export interface RuntimeFileWriteRequest {
+  path: string;
+  content: string;
+}
+
+export interface RuntimeFileWriteResponse {
+  path: string;
+  size_bytes: number;
+}
