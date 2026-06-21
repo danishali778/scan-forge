@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getCurrentUser, login, logout } from "@/api/auth";
+import { queryKeys } from "@/lib/queryKeys";
 import type { LoginRequest } from "@/types/api";
 
-export const currentUserQueryKey = ["auth", "me"] as const;
+export const currentUserQueryKey = queryKeys.auth.me;
 
 export function useCurrentUser() {
   return useQuery({
@@ -20,7 +21,7 @@ export function useLogin() {
   return useMutation({
     mutationFn: (request: LoginRequest) => login(request),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: currentUserQueryKey });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me });
     },
   });
 }
@@ -31,7 +32,7 @@ export function useLogout() {
   return useMutation({
     mutationFn: logout,
     onSuccess: () => {
-      queryClient.setQueryData(currentUserQueryKey, {
+      queryClient.setQueryData(queryKeys.auth.me, {
         authenticated: false,
         user_id: null,
         email: null,
