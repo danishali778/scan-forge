@@ -101,6 +101,30 @@ export interface ApiProviderProfile {
   has_credential: boolean;
 }
 
+export interface ApiRole {
+  id: string;
+  name: string;
+  description: string | null;
+  permissions: string[];
+}
+
+export interface ApiUser {
+  id: string;
+  email: string;
+  name: string | null;
+  status: string;
+  role_id: string;
+  role: string;
+  supabase_linked: boolean;
+}
+
+export interface ApiWorkspace {
+  id: string;
+  name: string;
+  slug: string;
+  settings: Record<string, unknown>;
+}
+
 export interface ApiSessionSummary {
   id: string;
   title: string;

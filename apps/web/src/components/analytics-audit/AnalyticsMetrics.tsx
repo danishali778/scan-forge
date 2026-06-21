@@ -16,10 +16,10 @@ function Sparkline({ metric }: { metric: AnalyticsMetric }) {
   );
 }
 
-export function AnalyticsMetricsStrip() {
+export function AnalyticsMetricsStrip({ items = metrics }: { items?: AnalyticsMetric[] }) {
   return (
     <section className="grid grid-cols-5 overflow-hidden rounded-md border border-slate-200 bg-white">
-      {metrics.map((metric, index) => (
+      {items.map((metric, index) => (
         <div key={metric.label} className={["p-4", index > 0 ? "border-l border-slate-200" : ""].join(" ")}>
           <div className="text-sm font-semibold text-slate-900">{metric.label}</div>
           <div className="mt-4 flex items-end justify-between gap-3">

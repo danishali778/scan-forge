@@ -2,6 +2,7 @@ import { ArrowRight } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { sessionFindings, severities, statusSlices, toolMetrics } from "@/mocks/analytics-audit";
+import type { SeverityMetric, SessionFindingMetric, StatusSlice, ToolMetric } from "@/types/analytics-audit";
 
 function Panel({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
   return (
@@ -21,16 +22,24 @@ function toneColor(tone: string) {
   return "bg-blue-500";
 }
 
-export function AnalyticsDashboardPanels() {
+export function AnalyticsDashboardPanels({
+  slices = statusSlices,
+  severityItems = severities,
+}: {
+  slices?: StatusSlice[];
+  severityItems?: SeverityMetric[];
+}) {
+  const totalSessions = slices.reduce((total, slice) => total + slice.value, 0);
+
   return (
     <div className="grid grid-cols-[1fr_1.15fr_1fr_1fr] gap-3">
       <Panel title="Sessions by status" subtitle="Last 30 days">
         <div className="flex items-center gap-5">
           <div className="grid h-36 w-36 place-items-center rounded-full border-[28px] border-teal-600 bg-white text-sm font-semibold text-slate-700">
-            23
+            {totalSessions}
           </div>
           <div className="space-y-2">
-            {statusSlices.map((slice) => (
+            {slices.map((slice) => (
               <div key={slice.label} className="grid grid-cols-[12px_82px_1fr] items-center gap-2 text-xs">
                 <span className={`h-2 w-2 rounded-full ${slice.color}`} />
                 <span className="font-medium text-slate-700">{slice.label}</span>
@@ -60,7 +69,7 @@ export function AnalyticsDashboardPanels() {
 
       <Panel title="Findings by severity" subtitle="Last 30 days">
         <div className="space-y-3">
-          {severities.map((severity) => (
+          {severityItems.map((severity) => (
             <div key={severity.severity} className="grid grid-cols-[70px_1fr_60px] items-center gap-3 text-sm">
               <span className="text-slate-700">{severity.severity}</span>
               <span className="h-2 rounded-full bg-slate-100">
@@ -88,7 +97,13 @@ export function AnalyticsDashboardPanels() {
   );
 }
 
-export function AnalyticsTables() {
+export function AnalyticsTables({
+  tools = toolMetrics,
+  sessions = sessionFindings,
+}: {
+  tools?: ToolMetric[];
+  sessions?: SessionFindingMetric[];
+}) {
   return (
     <div className="grid grid-cols-2 gap-3">
       <Panel title="Top tools by success rate" subtitle="Last 30 days">
@@ -101,7 +116,7 @@ export function AnalyticsTables() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {toolMetrics.map((tool) => (
+            {tools.map((tool) => (
               <tr key={tool.tool}>
                 <td className="py-2 font-mono text-xs text-slate-800">{tool.tool}</td>
                 <td className="py-2">{tool.calls}</td>
@@ -128,7 +143,7 @@ export function AnalyticsTables() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {sessionFindings.map((session) => (
+            {sessions.map((session) => (
               <tr key={session.sessionId}>
                 <td className="py-2">
                   <div className="font-semibold text-slate-900">{session.session}</div>

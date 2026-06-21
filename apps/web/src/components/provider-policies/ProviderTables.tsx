@@ -117,13 +117,13 @@ function PolicyRow({ policy, selected }: { policy: PolicyProfileRow; selected?: 
   );
 }
 
-export function ProviderProfilesTable() {
+export function ProviderProfilesTable({ providers = providerProfiles }: { providers?: ProviderProfileRow[] }) {
   return (
     <section className="border-b border-slate-200 pb-6">
       <div className="flex items-end justify-between gap-4">
         <div>
           <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-950">
-            Provider profiles <Pill tone="slate">3</Pill>
+            Provider profiles <Pill tone="slate">{providers.length}</Pill>
           </h2>
           <p className="mt-1 text-sm text-slate-500">Model providers available to sessions in this workspace.</p>
         </div>
@@ -141,24 +141,26 @@ export function ProviderProfilesTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {providerProfiles.map((provider, index) => (
+            {providers.map((provider, index) => (
               <ProviderRow key={provider.id} provider={provider} selected={index === 0} />
             ))}
           </tbody>
         </table>
       </div>
-      <p className="mt-4 text-sm text-slate-500">Showing 1 to 3 of 3 providers</p>
+      <p className="mt-4 text-sm text-slate-500">Showing 1 to {providers.length} of {providers.length} providers</p>
     </section>
   );
 }
 
-export function PolicyProfilesTable() {
+export function PolicyProfilesTable({ policies = policyProfiles }: { policies?: PolicyProfileRow[] }) {
+  const issueCount = policies.filter((policy) => policy.hasIssue).length;
+
   return (
     <section className="pt-6">
       <div className="flex items-end justify-between gap-4">
         <div>
           <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-950">
-            Policy profiles <Pill tone="slate">3</Pill>
+            Policy profiles <Pill tone="slate">{policies.length}</Pill>
           </h2>
           <p className="mt-1 text-sm text-slate-500">Govern behavior, approvals, and execution safety.</p>
         </div>
@@ -176,18 +178,20 @@ export function PolicyProfilesTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {policyProfiles.map((policy, index) => (
+            {policies.map((policy, index) => (
               <PolicyRow key={policy.id} policy={policy} selected={index === 0} />
             ))}
           </tbody>
         </table>
-        <div className="flex items-center justify-between border-t border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <span className="inline-flex items-center gap-2 font-semibold">
-            <TriangleAlert className="h-4 w-4" />
-            1 policy has validation issues
-          </span>
-          <button className="font-semibold text-teal-700">Review issues</button>
-        </div>
+        {issueCount > 0 ? (
+          <div className="flex items-center justify-between border-t border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <span className="inline-flex items-center gap-2 font-semibold">
+              <TriangleAlert className="h-4 w-4" />
+              {issueCount} {issueCount === 1 ? "policy has" : "policies have"} validation issues
+            </span>
+            <button className="font-semibold text-teal-700">Review issues</button>
+          </div>
+        ) : null}
       </div>
     </section>
   );
