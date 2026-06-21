@@ -25,7 +25,9 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import { Link, useLocation } from "react-router-dom";
 
+import { getNavPath, isNavPathActive } from "@/app/routes";
 import {
   candidateFindings,
   dateRangeOptions,
@@ -96,6 +98,8 @@ function StatusBadge({ status }: { status: EvidenceStatus }) {
 }
 
 function Sidebar() {
+  const location = useLocation();
+
   return (
     <aside className="flex h-screen w-[260px] shrink-0 flex-col bg-[#102233] text-slate-100">
       <div className="flex h-[74px] items-center gap-3 px-6">
@@ -114,24 +118,36 @@ function Sidebar() {
       <nav className="mt-6 flex-1 space-y-1 px-4">
         {evidenceNavItems.map((item, index) => {
           const Icon = item.icon;
+          const path = getNavPath(item.label);
+          const active = path ? isNavPathActive(item.label, location.pathname) : item.active;
+          const className = `flex h-11 w-full items-center justify-between rounded-md px-3 text-left text-sm font-medium transition ${
+            active ? "bg-teal-500/20 text-white" : "text-slate-200 hover:bg-white/5 hover:text-white"
+          }`;
+          const content = (
+            <>
+              <span className="flex min-w-0 items-center gap-3">
+                <Icon className="h-5 w-5 shrink-0 text-slate-300" />
+                <span className="truncate">{item.label}</span>
+              </span>
+              {item.badge ? (
+                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-orange-500 px-1.5 text-xs font-bold text-white">
+                  {item.badge}
+                </span>
+              ) : null}
+            </>
+          );
+
           return (
             <div key={item.label} className={index === evidenceNavItems.length - 1 ? "mt-7 border-t border-white/12 pt-6" : undefined}>
-              <button
-                type="button"
-                className={`flex h-11 w-full items-center justify-between rounded-md px-3 text-left text-sm font-medium transition ${
-                  item.active ? "bg-teal-500/20 text-white" : "text-slate-200 hover:bg-white/5 hover:text-white"
-                }`}
-              >
-                <span className="flex min-w-0 items-center gap-3">
-                  <Icon className="h-5 w-5 shrink-0 text-slate-300" />
-                  <span className="truncate">{item.label}</span>
-                </span>
-                {item.badge ? (
-                  <span className="grid h-5 min-w-5 place-items-center rounded-full bg-orange-500 px-1.5 text-xs font-bold text-white">
-                    {item.badge}
-                  </span>
-                ) : null}
-              </button>
+              {path ? (
+                <Link to={path} className={className}>
+                  {content}
+                </Link>
+              ) : (
+                <button type="button" className={className}>
+                  {content}
+                </button>
+              )}
             </div>
           );
         })}

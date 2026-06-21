@@ -12,6 +12,7 @@ type SessionsTableProps = {
   pageSize: number;
   onPageChange: (page: number) => void;
   onSelectSession: (session: SessionsListSession) => void;
+  onOpenSession: (sessionId: string) => void;
   onToggleFavorite: (sessionId: string) => void;
 };
 
@@ -38,6 +39,7 @@ export function SessionsTable({
   pageSize,
   onPageChange,
   onSelectSession,
+  onOpenSession,
   onToggleFavorite,
 }: SessionsTableProps) {
   const maxPage = Math.max(1, Math.ceil(sessions.length / pageSize));
@@ -200,6 +202,7 @@ export function SessionsTable({
           <button
             type="button"
             className="inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 text-[13px] font-medium text-slate-700"
+            onClick={() => onOpenSession(selectedSessionId)}
           >
             Open
             <ExternalLink className="h-3.5 w-3.5" />

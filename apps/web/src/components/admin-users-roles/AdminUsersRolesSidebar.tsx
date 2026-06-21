@@ -1,8 +1,12 @@
 import { ChevronsLeft, Copy, Hexagon } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 
+import { getNavPath, isNavPathActive } from "@/app/routes";
 import { adminNavigationItems, workspaceStats } from "@/mocks/admin-users-roles";
 
 export function AdminUsersRolesSidebar() {
+  const location = useLocation();
+
   return (
     <aside className="flex h-screen w-[232px] shrink-0 flex-col bg-[#0a1c2b] text-slate-100 shadow-xl">
       <div className="flex h-[68px] items-center gap-3 px-6">
@@ -13,16 +17,14 @@ export function AdminUsersRolesSidebar() {
       <nav className="flex-1 space-y-1 px-4 py-5">
         {adminNavigationItems.map((item) => {
           const Icon = item.icon;
-
-          return (
-            <button
-              key={item.label}
-              type="button"
-              className={[
-                "flex h-11 w-full items-center gap-3 rounded-md px-3 text-left text-[14px] font-semibold transition",
-                item.active ? "bg-teal-700/80 text-white" : "text-slate-200 hover:bg-white/8 hover:text-white",
-              ].join(" ")}
-            >
+          const path = getNavPath(item.label);
+          const active = path ? isNavPathActive(item.label, location.pathname) : item.active;
+          const className = [
+            "flex h-11 w-full items-center gap-3 rounded-md px-3 text-left text-[14px] font-semibold transition",
+            active ? "bg-teal-700/80 text-white" : "text-slate-200 hover:bg-white/8 hover:text-white",
+          ].join(" ");
+          const content = (
+            <>
               <Icon className="h-[18px] w-[18px]" />
               <span className="min-w-0 flex-1 truncate">{item.label}</span>
               {item.badge ? (
@@ -35,6 +37,16 @@ export function AdminUsersRolesSidebar() {
                   {item.badge}
                 </span>
               ) : null}
+            </>
+          );
+
+          return path ? (
+            <Link key={item.label} to={path} className={className}>
+              {content}
+            </Link>
+          ) : (
+            <button key={item.label} type="button" className={className}>
+              {content}
             </button>
           );
         })}

@@ -1,5 +1,7 @@
 import { Building2, ChevronDown, HelpCircle, Plus } from "lucide-react";
+import { Link } from "react-router-dom";
 
+import { getSettingsTabPath } from "@/app/routes";
 import { currentUser, settingsTabs, workspaceStats } from "@/mocks/admin-users-roles";
 
 interface AdminUsersRolesHeaderProps {
@@ -53,22 +55,31 @@ export function AdminUsersRolesHeader({ activeTab, onTabChange }: AdminUsersRole
 
       <div className="flex h-[64px] items-center justify-between gap-6 px-7">
         <nav className="flex h-full items-center gap-8">
-          {settingsTabs.map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => onTabChange(tab)}
-              className={[
+          {settingsTabs.map((tab) => {
+            const tabPath = getSettingsTabPath(tab);
+            const className = [
                 "relative h-full text-[14px] font-semibold transition",
                 activeTab === tab ? "text-teal-800" : "text-slate-700 hover:text-slate-950",
-              ].join(" ")}
-            >
-              {tab}
-              {activeTab === tab ? (
-                <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-teal-700" />
-              ) : null}
-            </button>
-          ))}
+            ].join(" ");
+            const content = (
+              <>
+                {tab}
+                {activeTab === tab ? (
+                  <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-teal-700" />
+                ) : null}
+              </>
+            );
+
+            return tabPath && tabPath !== "/settings/users" ? (
+              <Link key={tab} to={tabPath} className={className}>
+                {content}
+              </Link>
+            ) : (
+              <button key={tab} type="button" onClick={() => onTabChange(tab)} className={className}>
+                {content}
+              </button>
+            );
+          })}
         </nav>
 
         <button

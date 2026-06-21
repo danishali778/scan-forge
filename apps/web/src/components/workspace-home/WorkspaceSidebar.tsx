@@ -1,5 +1,7 @@
 import { ChevronDown, ChevronsLeft, Hexagon } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 
+import { getNavPath, isNavPathActive } from "@/app/routes";
 import type { WorkspaceNavItem } from "@/types/workspace-home";
 
 interface WorkspaceSidebarProps {
@@ -9,6 +11,8 @@ interface WorkspaceSidebarProps {
 }
 
 export function WorkspaceSidebar({ items, workspaceName, initials }: WorkspaceSidebarProps) {
+  const location = useLocation();
+
   return (
     <aside className="flex h-screen w-[180px] shrink-0 flex-col bg-[#071d2b] text-slate-200">
       <div className="flex h-[58px] items-center gap-2 px-4">
@@ -19,16 +23,14 @@ export function WorkspaceSidebar({ items, workspaceName, initials }: WorkspaceSi
       <nav className="flex-1 space-y-1 px-2 py-4">
         {items.map((item) => {
           const Icon = item.icon;
-
-          return (
-            <button
-              key={item.label}
-              type="button"
-              className={[
-                "flex h-9 w-full items-center gap-3 rounded-md px-3 text-left text-[13px] font-semibold transition",
-                item.active ? "bg-teal-500/25 text-white" : "text-slate-300 hover:bg-white/10 hover:text-white",
-              ].join(" ")}
-            >
+          const path = getNavPath(item.label);
+          const active = path ? isNavPathActive(item.label, location.pathname) : item.active;
+          const className = [
+            "flex h-9 w-full items-center gap-3 rounded-md px-3 text-left text-[13px] font-semibold transition",
+            active ? "bg-teal-500/25 text-white" : "text-slate-300 hover:bg-white/10 hover:text-white",
+          ].join(" ");
+          const content = (
+            <>
               <Icon className="h-[17px] w-[17px]" />
               <span className="min-w-0 flex-1 truncate">{item.label}</span>
               {item.badge ? (
@@ -36,6 +38,16 @@ export function WorkspaceSidebar({ items, workspaceName, initials }: WorkspaceSi
                   {item.badge}
                 </span>
               ) : null}
+            </>
+          );
+
+          return path ? (
+            <Link key={item.label} to={path} className={className}>
+              {content}
+            </Link>
+          ) : (
+            <button key={item.label} type="button" className={className}>
+              {content}
             </button>
           );
         })}

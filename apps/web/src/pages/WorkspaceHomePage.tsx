@@ -1,5 +1,7 @@
 import { CalendarDays, Plus, RefreshCw } from "lucide-react";
+import { Link } from "react-router-dom";
 
+import { appRoutes } from "@/app/routes";
 import { ActiveSessionsPanel } from "@/components/workspace-home/ActiveSessionsPanel";
 import { ApprovalRequestPanel } from "@/components/workspace-home/ApprovalRequestPanel";
 import { AttentionQueuePanel } from "@/components/workspace-home/AttentionQueuePanel";
@@ -61,13 +63,13 @@ export function WorkspaceHomePage() {
                 >
                   <RefreshCw className="h-4 w-4" />
                 </button>
-                <button
-                  type="button"
+                <Link
+                  to={appRoutes.projectsNew}
                   className="inline-flex h-9 items-center gap-2 rounded-md bg-teal-700 px-4 text-[13px] font-semibold text-white shadow-sm hover:bg-teal-800"
                 >
                   <Plus className="h-4 w-4" />
                   New project
-                </button>
+                </Link>
               </div>
             </div>
 

@@ -1,8 +1,12 @@
 import { Aperture, ChevronDown, ChevronsLeft } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 
+import { getNavPath, isNavPathActive } from "@/app/routes";
 import { memoryNavItems } from "@/mocks/memory-library";
 
 export function MemorySidebar() {
+  const location = useLocation();
+
   return (
     <aside className="flex h-screen w-[252px] shrink-0 flex-col bg-[#081827] text-slate-200">
       <div className="flex h-[86px] items-center gap-3 border-b border-white/10 px-7">
@@ -13,17 +17,15 @@ export function MemorySidebar() {
       <nav className="flex-1 space-y-1 px-2.5 py-5">
         {memoryNavItems.map((item) => {
           const Icon = item.icon;
-
-          return (
-            <button
-              key={item.label}
-              type="button"
-              className={`flex h-12 w-full items-center gap-3 rounded-md px-4 text-left text-sm font-medium transition ${
-                item.active
-                  ? "bg-teal-600/75 text-white shadow-[inset_3px_0_0_#5eead4]"
-                  : "text-slate-300 hover:bg-white/5 hover:text-white"
-              }`}
-            >
+          const path = getNavPath(item.label);
+          const active = path ? isNavPathActive(item.label, location.pathname) : item.active;
+          const className = `flex h-12 w-full items-center gap-3 rounded-md px-4 text-left text-sm font-medium transition ${
+            active
+              ? "bg-teal-600/75 text-white shadow-[inset_3px_0_0_#5eead4]"
+              : "text-slate-300 hover:bg-white/5 hover:text-white"
+          }`;
+          const content = (
+            <>
               <Icon className="h-5 w-5 shrink-0" />
               <span className="min-w-0 flex-1 truncate">{item.label}</span>
               {item.badge ? (
@@ -31,6 +33,16 @@ export function MemorySidebar() {
                   {item.badge}
                 </span>
               ) : null}
+            </>
+          );
+
+          return path ? (
+            <Link key={item.label} to={path} className={className}>
+              {content}
+            </Link>
+          ) : (
+            <button key={item.label} type="button" className={className}>
+              {content}
             </button>
           );
         })}

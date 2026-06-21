@@ -1,8 +1,12 @@
 import { ChevronDown } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 
+import { getNavPath, isNavPathActive } from "@/app/routes";
 import { analyticsNavigation } from "@/mocks/analytics-audit";
 
 export function AnalyticsSidebar() {
+  const location = useLocation();
+
   return (
     <aside className="flex w-[200px] shrink-0 flex-col bg-[#071927] px-4 py-5 text-white">
       <div className="flex items-center gap-3">
@@ -15,14 +19,14 @@ export function AnalyticsSidebar() {
       <nav className="mt-7 space-y-1 border-t border-white/10 pt-4">
         {analyticsNavigation.map((item) => {
           const Icon = item.icon;
-          return (
-            <button
-              key={item.label}
-              className={[
-                "flex h-11 w-full items-center gap-3 rounded-md px-3 text-left text-sm font-semibold",
-                item.active ? "bg-teal-700 text-white" : "text-slate-200 hover:bg-white/10",
-              ].join(" ")}
-            >
+          const path = getNavPath(item.label);
+          const active = path ? isNavPathActive(item.label, location.pathname) : item.active;
+          const className = [
+            "flex h-11 w-full items-center gap-3 rounded-md px-3 text-left text-sm font-semibold",
+            active ? "bg-teal-700 text-white" : "text-slate-200 hover:bg-white/10",
+          ].join(" ");
+          const content = (
+            <>
               <Icon className="h-4 w-4" />
               <span className="min-w-0 flex-1">{item.label}</span>
               {item.badge ? (
@@ -35,7 +39,23 @@ export function AnalyticsSidebar() {
                   {item.badge}
                 </span>
               ) : null}
-            </button>
+            </>
+          );
+
+          return (
+            path ? (
+              <Link key={item.label} to={path} className={className}>
+                {content}
+              </Link>
+            ) : (
+              <button
+              key={item.label}
+              type="button"
+              className={className}
+              >
+                {content}
+              </button>
+            )
           );
         })}
       </nav>
