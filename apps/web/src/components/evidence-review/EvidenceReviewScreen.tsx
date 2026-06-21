@@ -29,10 +29,10 @@ import { Link, useLocation } from "react-router-dom";
 
 import { getNavPath, isNavPathActive } from "@/app/routes";
 import {
-  candidateFindings,
+  candidateFindings as mockCandidateFindings,
   dateRangeOptions,
   defaultEvidenceFilters,
-  evidenceItems,
+  evidenceItems as mockEvidenceItems,
   evidenceMetrics,
   evidenceNavItems,
   evidenceTypeOptions,
@@ -530,11 +530,13 @@ function Inspector({ finding, onClose }: { finding: CandidateFinding; onClose: (
   );
 }
 
-function filterEvidence(filters: EvidenceFiltersState) {
-  return evidenceItems.filter((item) => {
-    const linkedFinding = candidateFindings.find((finding) => finding.id === item.linkedFinding);
+function filterEvidence(filters: EvidenceFiltersState, items: EvidenceItem[], findings: CandidateFinding[]) {
+  const sessionExists = items.some((item) => item.session === filters.session);
+
+  return items.filter((item) => {
+    const linkedFinding = findings.find((finding) => finding.id === item.linkedFinding);
     return (
-      filters.session === item.session &&
+      (!sessionExists || filters.session === item.session) &&
       (filters.evidenceType === "all" || filters.evidenceType === item.type) &&
       (filters.status === "all" || filters.status === item.status) &&
       (filters.reviewer === "all" || filters.reviewer === item.createdBy.name) &&
@@ -543,13 +545,28 @@ function filterEvidence(filters: EvidenceFiltersState) {
   });
 }
 
-export function EvidenceReviewScreen() {
+interface EvidenceReviewScreenProps {
+  evidenceItems?: EvidenceItem[];
+  candidateFindings?: CandidateFinding[];
+  isLoading?: boolean;
+  errorMessage?: string | null;
+}
+
+export function EvidenceReviewScreen({
+  evidenceItems = mockEvidenceItems,
+  candidateFindings = mockCandidateFindings,
+  isLoading = false,
+  errorMessage = null,
+}: EvidenceReviewScreenProps) {
   const [filters, setFilters] = useState(defaultEvidenceFilters);
   const [selectedEvidenceId, setSelectedEvidenceId] = useState("evid-subdomain-brute-force");
   const [inspectorOpen, setInspectorOpen] = useState(true);
-  const filteredItems = useMemo(() => filterEvidence(filters), [filters]);
-  const selectedEvidence = filteredItems.find((item) => item.id === selectedEvidenceId) ?? filteredItems[0] ?? evidenceItems[0];
-  const selectedFinding = candidateFindings.find((finding) => finding.id === selectedEvidence.linkedFinding) ?? candidateFindings[0];
+  const filteredItems = useMemo(() => filterEvidence(filters, evidenceItems, candidateFindings), [candidateFindings, evidenceItems, filters]);
+  const selectedEvidence = filteredItems.find((item) => item.id === selectedEvidenceId) ?? filteredItems[0] ?? evidenceItems[0] ?? mockEvidenceItems[0];
+  const selectedFinding =
+    candidateFindings.find((finding) => finding.id === selectedEvidence.linkedFinding) ??
+    candidateFindings[0] ??
+    mockCandidateFindings[0];
 
   return (
     <div className="h-screen overflow-hidden bg-[#f6f8fa] text-slate-900">
@@ -560,6 +577,16 @@ export function EvidenceReviewScreen() {
           <div className="flex min-h-0 flex-1">
             <section className="min-w-0 flex-1 overflow-y-auto bg-[#f7f9fb] p-6">
               <div className="space-y-5">
+                {errorMessage ? (
+                  <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+                    {errorMessage}
+                  </div>
+                ) : null}
+                {isLoading ? (
+                  <div className="rounded-md border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-600">
+                    Loading evidence and findings...
+                  </div>
+                ) : null}
                 <Filters filters={filters} onChange={setFilters} />
                 <Metrics />
                 {filteredItems.length > 0 ? (

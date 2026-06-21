@@ -82,3 +82,47 @@ export interface EvidenceSelectOption {
   label: string;
   value: string;
 }
+
+export interface ApiEvidence {
+  id: string;
+  project_id: string;
+  session_id: string;
+  task_id: string | null;
+  step_id: string | null;
+  tool_call_id: string | null;
+  type: string;
+  title: string;
+  summary: string;
+  content: string | null;
+  asset_id: string | null;
+  metadata: Record<string, unknown>;
+  created_by_agent: boolean;
+  created_at: string;
+}
+
+export interface ApiFinding {
+  id: string;
+  project_id: string;
+  session_id: string;
+  title: string;
+  status: string;
+  severity: string;
+  confidence: string;
+  affected_assets: unknown[];
+  description: string;
+  impact: string;
+  reproduction_steps: string;
+  remediation: string;
+  references: unknown[];
+  evidence_ids: string[];
+  created_by_agent: boolean;
+  reviewed_by: string | null;
+  review_note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FindingReviewRequest {
+  status: string;
+  review_note?: string | null;
+}
