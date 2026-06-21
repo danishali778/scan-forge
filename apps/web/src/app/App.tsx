@@ -9,6 +9,7 @@ import {
 } from "react-router-dom";
 
 import { appRoutes } from "@/app/routes";
+import { FullPageState } from "@/components/common/RequestState";
 import { useCurrentUser } from "@/hooks/useAuth";
 import AdminUsersRolesPage from "@/pages/AdminUsersRolesPage";
 import AnalyticsAuditPage from "@/pages/AnalyticsAuditPage";
@@ -32,17 +33,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-
-function FullPageState({ title, detail }: { title: string; detail: string }) {
-  return (
-    <main className="grid min-h-screen place-items-center bg-slate-50 px-6 text-slate-900">
-      <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm">
-        <h1 className="text-lg font-semibold">{title}</h1>
-        <p className="mt-2 text-sm text-slate-500">{detail}</p>
-      </div>
-    </main>
-  );
-}
 
 function RequireAuth() {
   const location = useLocation();

@@ -1,10 +1,12 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { listPolicies } from "@/api/policies";
 import { createProject, createScope } from "@/api/projects";
 import { listProviderProfiles } from "@/api/providerProfiles";
 import { createSession } from "@/api/sessions";
 import { createTarget } from "@/api/targets";
+import { optionalPageItems } from "@/lib/apiPages";
+import { queryKeys } from "@/lib/queryKeys";
 import type { ApiSessionDetail, ApiTargetType } from "@/types/api";
 import type { Target } from "@/types/new-assessment";
 
@@ -31,21 +33,14 @@ function targetTypeToApi(value: Target): ApiTargetType {
   return "domain";
 }
 
-async function optionalList<T>(request: () => Promise<{ items: T[] }>): Promise<T[]> {
-  try {
-    const response = await request();
-    return response.items;
-  } catch {
-    return [];
-  }
-}
-
 export function useCreateAssessmentFlow() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (input: AssessmentDetailsInput): Promise<ApiSessionDetail> => {
       const [providerProfiles, policies] = await Promise.all([
-        optionalList(listProviderProfiles),
-        optionalList(listPolicies),
+        optionalPageItems(listProviderProfiles),
+        optionalPageItems(listPolicies),
       ]);
 
       const project = await createProject({
@@ -99,6 +94,10 @@ export function useCreateAssessmentFlow() {
         objective: input.description || "Assess the approved target perimeter.",
         mode: "assisted",
       });
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.list() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.sessions.list() });
     },
   });
 }

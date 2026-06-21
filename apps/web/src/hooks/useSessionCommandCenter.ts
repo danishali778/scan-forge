@@ -10,54 +10,57 @@ import {
   pauseSession,
   stopSession,
 } from "@/api/sessions";
+import { pageItems } from "@/lib/apiPages";
+import { queryKeys } from "@/lib/queryKeys";
 
 export function useSessionCommandCenter(sessionId: string | undefined) {
   const enabled = Boolean(sessionId);
+  const resolvedSessionId = sessionId ?? "";
 
   const session = useQuery({
-    queryKey: ["sessions", sessionId],
-    queryFn: () => getSession(sessionId as string),
+    queryKey: queryKeys.sessions.detail(resolvedSessionId),
+    queryFn: () => getSession(resolvedSessionId),
     enabled,
   });
 
   const tasks = useQuery({
-    queryKey: ["sessions", sessionId, "tasks"],
-    queryFn: () => listSessionTasks(sessionId as string),
+    queryKey: queryKeys.sessions.tasks(resolvedSessionId),
+    queryFn: () => listSessionTasks(resolvedSessionId),
     enabled,
   });
 
   const jobs = useQuery({
-    queryKey: ["sessions", sessionId, "jobs"],
-    queryFn: () => listSessionJobs(sessionId as string),
+    queryKey: queryKeys.sessions.jobs(resolvedSessionId),
+    queryFn: () => listSessionJobs(resolvedSessionId),
     enabled,
   });
 
   const events = useQuery({
-    queryKey: ["sessions", sessionId, "events"],
-    queryFn: () => listSessionEvents(sessionId as string),
+    queryKey: queryKeys.sessions.events(resolvedSessionId),
+    queryFn: () => listSessionEvents(resolvedSessionId),
     enabled,
     refetchInterval: 5_000,
   });
 
   const runtime = useQuery({
-    queryKey: ["sessions", sessionId, "runtime"],
-    queryFn: () => getSessionRuntime(sessionId as string),
+    queryKey: queryKeys.sessions.runtime(resolvedSessionId),
+    queryFn: () => getSessionRuntime(resolvedSessionId),
     enabled,
   });
 
   const toolCalls = useQuery({
-    queryKey: ["sessions", sessionId, "tool-calls"],
-    queryFn: () => listSessionToolCalls(sessionId as string),
+    queryKey: queryKeys.sessions.toolCalls(resolvedSessionId),
+    queryFn: () => listSessionToolCalls(resolvedSessionId),
     enabled,
   });
 
   return {
     session: session.data,
-    tasks: tasks.data?.items ?? [],
-    jobs: jobs.data?.items ?? [],
-    events: events.data?.items ?? [],
+    tasks: pageItems(tasks.data),
+    jobs: pageItems(jobs.data),
+    events: pageItems(events.data),
     runtime: runtime.data ?? null,
-    toolCalls: toolCalls.data?.items ?? [],
+    toolCalls: pageItems(toolCalls.data),
     isLoading: session.isLoading || tasks.isLoading,
     error: session.error ?? tasks.error ?? jobs.error ?? events.error ?? runtime.error ?? toolCalls.error,
   };
@@ -65,18 +68,20 @@ export function useSessionCommandCenter(sessionId: string | undefined) {
 
 export function useSessionControls(sessionId: string | undefined) {
   const queryClient = useQueryClient();
+  const resolvedSessionId = sessionId ?? "";
 
   const invalidateSession = () => {
-    void queryClient.invalidateQueries({ queryKey: ["sessions", sessionId] });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.sessions.detail(resolvedSessionId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.sessions.events(resolvedSessionId) });
   };
 
   const pause = useMutation({
-    mutationFn: () => pauseSession(sessionId as string),
+    mutationFn: () => pauseSession(resolvedSessionId),
     onSuccess: invalidateSession,
   });
 
   const stop = useMutation({
-    mutationFn: () => stopSession(sessionId as string),
+    mutationFn: () => stopSession(resolvedSessionId),
     onSuccess: invalidateSession,
   });
 
