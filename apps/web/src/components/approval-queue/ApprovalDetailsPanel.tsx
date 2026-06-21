@@ -29,6 +29,7 @@ type ApprovalDetailsPanelProps = {
   onDecisionNoteChange: (value: string) => void;
   onAskRevision: () => void;
   onApplyDecision: (status: Extract<ApprovalStatus, "approved" | "denied">) => void;
+  isDecisionPending?: boolean;
 };
 
 const tabs: { key: DetailTab; label: string }[] = [
@@ -61,8 +62,10 @@ export function ApprovalDetailsPanel({
   onDecisionNoteChange,
   onAskRevision,
   onApplyDecision,
+  isDecisionPending = false,
 }: ApprovalDetailsPanelProps) {
   const decisionLocked = request.status !== "pending";
+  const decisionDisabled = decisionLocked || isDecisionPending;
 
   return (
     <aside className="flex w-[500px] shrink-0 flex-col rounded-tl-lg border border-slate-200 bg-white shadow-sm">
@@ -150,7 +153,7 @@ export function ApprovalDetailsPanel({
                 type="button"
                 className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-[13px] font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={onAskRevision}
-                disabled={decisionLocked}
+                disabled={decisionDisabled}
               >
                 <MessageSquarePlus className="h-4 w-4" />
                 Ask for revision
@@ -159,7 +162,7 @@ export function ApprovalDetailsPanel({
                 type="button"
                 className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-teal-700 px-3 text-[13px] font-semibold text-white shadow-sm shadow-teal-900/15 hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={() => onApplyDecision("approved")}
-                disabled={decisionLocked}
+                disabled={decisionDisabled}
               >
                 <SquareTerminal className="h-4 w-4" />
                 Approve
@@ -168,7 +171,7 @@ export function ApprovalDetailsPanel({
                 type="button"
                 className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-red-600 px-3 text-[13px] font-semibold text-white shadow-sm shadow-red-900/15 hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={() => onApplyDecision("denied")}
-                disabled={decisionLocked}
+                disabled={decisionDisabled}
               >
                 <ShieldX className="h-4 w-4" />
                 Deny
