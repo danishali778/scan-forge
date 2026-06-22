@@ -7,6 +7,8 @@ import { ApprovalMetricsPanel } from "@/components/approval-queue/ApprovalMetric
 import { ApprovalOutcomesPanel } from "@/components/approval-queue/ApprovalOutcomesPanel";
 import { ApprovalQueueTable } from "@/components/approval-queue/ApprovalQueueTable";
 import { ApprovalSidebar } from "@/components/approval-queue/ApprovalSidebar";
+import { useApprovalDecision, useApprovals } from "@/hooks/useApprovals";
+import { getErrorMessage } from "@/lib/errors";
 import {
   approvalDateRange,
   approvalMetrics,
@@ -29,7 +31,6 @@ type DecisionFeedback = {
 } | null;
 
 export function ApprovalsPage() {
-  const [requests, setRequests] = useState<ApprovalRequest[]>(approvalRequests);
   const [globalSearch, setGlobalSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [risk, setRisk] = useState<RiskFilter>("all");
@@ -41,6 +42,12 @@ export function ApprovalsPage() {
   const [decisionNote, setDecisionNote] = useState("");
   const [decisionFeedback, setDecisionFeedback] = useState<DecisionFeedback>(null);
   const [refreshLabel, setRefreshLabel] = useState("Refresh");
+  const [mockRequests, setMockRequests] = useState<ApprovalRequest[]>(approvalRequests);
+  const approvalsQuery = useApprovals();
+  const approvalDecision = useApprovalDecision();
+  const backendRequests = approvalsQuery.approvals;
+  const requests = backendRequests.length > 0 ? backendRequests : mockRequests;
+  const backendRequestIds = useMemo(() => new Set(backendRequests.map((request) => request.id)), [backendRequests]);
 
   const projects = useMemo(() => Array.from(new Set(requests.map((request) => request.project))).sort(), [requests]);
   const requesters = useMemo(
@@ -81,6 +88,7 @@ export function ApprovalsPage() {
 
   const handleRefresh = () => {
     setRefreshLabel("Updated");
+    void approvalsQuery.refetch();
     window.setTimeout(() => setRefreshLabel("Refresh"), 1200);
   };
 
@@ -107,7 +115,31 @@ export function ApprovalsPage() {
       return;
     }
 
-    setRequests((currentRequests) =>
+    if (backendRequestIds.has(selectedRequest.id)) {
+      const mutation = nextStatus === "approved" ? approvalDecision.approve : approvalDecision.deny;
+
+      mutation.mutate(
+        {
+          approvalId: selectedRequest.id,
+          request: { note: decisionNote },
+        },
+        {
+          onSuccess: () => {
+            setDecisionFeedback({
+              tone: "success",
+              message: nextStatus === "approved" ? "Decision recorded. The action can proceed." : "Decision recorded. The action will remain blocked.",
+            });
+            setDecisionNote("");
+          },
+          onError: (error) => {
+            setDecisionFeedback({ tone: "error", message: getErrorMessage(error) });
+          },
+        },
+      );
+      return;
+    }
+
+    setMockRequests((currentRequests) =>
       currentRequests.map((request) =>
         request.id === selectedRequest.id
           ? {
@@ -117,8 +149,8 @@ export function ApprovalsPage() {
               age: "just now",
               requestedAt: nextStatus === "approved" ? "Approved just now" : "Denied just now",
             }
-          : request
-      )
+          : request,
+      ),
     );
     setDecisionFeedback({
       tone: "success",
@@ -166,6 +198,16 @@ export function ApprovalsPage() {
 
             <div className="mt-3 flex min-h-0 flex-1 gap-3">
               <div className="min-w-0 flex-1 overflow-y-auto pb-1">
+                {approvalsQuery.error || approvalDecision.error ? (
+                  <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+                    {getErrorMessage(approvalsQuery.error ?? approvalDecision.error)}
+                  </div>
+                ) : null}
+                {approvalsQuery.isLoading ? (
+                  <div className="mb-3 rounded-md border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-600">
+                    Loading approval queue...
+                  </div>
+                ) : null}
                 <div className="space-y-3">
                   <ApprovalQueueTable
                     requests={filteredRequests}
@@ -197,6 +239,7 @@ export function ApprovalsPage() {
                 onDecisionNoteChange={setDecisionNote}
                 onAskRevision={handleAskRevision}
                 onApplyDecision={handleApplyDecision}
+                isDecisionPending={approvalDecision.isPending}
               />
             </div>
           </div>

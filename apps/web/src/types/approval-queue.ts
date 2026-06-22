@@ -108,3 +108,24 @@ export type ApprovalRiskSummary = {
   count: number;
   percentage: number;
 };
+
+export type ApiApproval = {
+  id: string;
+  session_id: string;
+  task_id: string | null;
+  step_id: string | null;
+  tool_call_id: string | null;
+  status: string;
+  risk_level: string;
+  reason: string;
+  requested_action: Record<string, unknown>;
+  requested_by_agent: string;
+  resolved_by: string | null;
+  resolution_note: string | null;
+  created_at: string;
+  resolved_at: string | null;
+};
+
+export type ApprovalResolveRequest = {
+  note?: string | null;
+};
