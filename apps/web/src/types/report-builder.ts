@@ -110,3 +110,16 @@ export type ReportBuilderMock = {
   exportHistory: ExportHistoryItem[];
   navigation: ReportNavItem[];
 };
+
+export type ApiReport = {
+  id: string;
+  project_id: string;
+  session_id: string;
+  title: string;
+  status: string;
+  format: string;
+  content: Record<string, unknown>;
+  asset_id: string | null;
+  created_at: string;
+  updated_at: string;
+};

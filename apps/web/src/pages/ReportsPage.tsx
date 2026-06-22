@@ -7,6 +7,8 @@ import { ReportBuilderSidebar } from "@/components/report-builder/ReportBuilderS
 import { ReportInspectorPanel, type InspectorTab } from "@/components/report-builder/ReportInspectorPanel";
 import { ReportOutlinePanel } from "@/components/report-builder/ReportOutlinePanel";
 import { ReportSettingsPanel } from "@/components/report-builder/ReportSettingsPanel";
+import { useReportBuilderData } from "@/hooks/useReports";
+import { getErrorMessage } from "@/lib/errors";
 import { reportBuilderMock } from "@/mocks/report-builder";
 import type {
   FindingStatus,
@@ -27,6 +29,8 @@ export function ReportsPage() {
   const [confidenceFilter, setConfidenceFilter] = useState<"All confidence" | ReportConfidence>("All confidence");
   const [search, setSearch] = useState("");
   const [activeInspectorTab, setActiveInspectorTab] = useState<InspectorTab>("Preview");
+  const backend = useReportBuilderData();
+  const reportData = backend.report ?? reportBuilderMock;
 
   const includedStatusIds = useMemo(
     () => new Set<FindingStatus>(statuses.filter((status) => status.included).map((status) => status.id)),
@@ -36,7 +40,7 @@ export function ReportsPage() {
   const visibleFindings = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    return reportBuilderMock.findings.filter((finding) => {
+    return reportData.findings.filter((finding) => {
       const matchesStatus = includedStatusIds.has(finding.status);
       const matchesSeverity = severityFilter === "All severity" || finding.severity === severityFilter;
       const matchesConfidence = confidenceFilter === "All confidence" || finding.confidence === confidenceFilter;
@@ -47,7 +51,7 @@ export function ReportsPage() {
 
       return matchesStatus && matchesSeverity && matchesConfidence && matchesSearch;
     });
-  }, [confidenceFilter, includedStatusIds, search, severityFilter]);
+  }, [confidenceFilter, includedStatusIds, reportData.findings, search, severityFilter]);
 
   const toggleStatus = (id: FindingStatus) => {
     setStatuses((current) =>
@@ -77,20 +81,30 @@ export function ReportsPage() {
 
         <main className="flex min-w-0 flex-1 flex-col">
           <ReportBuilderHeader
-            title="External Staging Review Report"
-            status={reportBuilderMock.status}
-            sessionName={reportBuilderMock.sessionName}
+            title={reportData.title}
+            status={reportData.status}
+            sessionName={reportData.sessionName}
           />
 
           <div className="min-h-0 flex-1 overflow-y-auto bg-[#fbfcfd] p-3">
+            {backend.error ? (
+              <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+                {getErrorMessage(backend.error)}
+              </div>
+            ) : null}
+            {backend.isLoading ? (
+              <div className="mb-3 rounded-md border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-600">
+                Loading backend reports...
+              </div>
+            ) : null}
             <div className="grid grid-cols-[300px_minmax(620px,1fr)_380px] gap-3">
               <ReportSettingsPanel
-                title={reportBuilderMock.title}
-                scope={reportBuilderMock.scope}
+                title={reportData.title}
+                scope={reportData.scope}
                 statuses={statuses}
                 sections={sections}
-                authors={reportBuilderMock.authors}
-                reviewers={reportBuilderMock.reviewers}
+                authors={reportData.authors}
+                reviewers={reportData.reviewers}
                 selectedAuthor={selectedAuthor}
                 selectedReviewer={selectedReviewer}
                 exportMarkdown={exportMarkdown}
@@ -119,16 +133,16 @@ export function ReportsPage() {
               <ReportInspectorPanel
                 activeTab={activeInspectorTab}
                 onTabChange={setActiveInspectorTab}
-                riskSummary={reportBuilderMock.riskSummary}
+                riskSummary={reportData.riskSummary}
                 totalFindings={visibleFindings.length}
-                evidence={reportBuilderMock.evidence}
-                exportAssets={reportBuilderMock.exportAssets}
-                readiness={reportBuilderMock.readiness}
+                evidence={reportData.evidence}
+                exportAssets={reportData.exportAssets}
+                readiness={reportData.readiness}
               />
             </div>
 
             <div className="mt-3">
-              <ExportHistoryTable exports={reportBuilderMock.exportHistory} />
+              <ExportHistoryTable exports={reportData.exportHistory} />
             </div>
           </div>
         </main>

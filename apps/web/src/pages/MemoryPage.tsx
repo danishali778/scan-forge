@@ -7,6 +7,8 @@ import { MemoryStatusTabs } from "@/components/memory-library/MemoryStatusTabs";
 import { MemoryTable } from "@/components/memory-library/MemoryTable";
 import { MemoryToolbar } from "@/components/memory-library/MemoryToolbar";
 import { SelectedMemoryPanel } from "@/components/memory-library/SelectedMemoryPanel";
+import { useMemoryLibrarySearch } from "@/hooks/useMemoryLibrary";
+import { getErrorMessage } from "@/lib/errors";
 import {
   approvedMemorySearchResults,
   initialMemoryFilters,
@@ -73,18 +75,28 @@ export function MemoryPage() {
   const [searchQuery, setSearchQuery] = useState("How do we handle tokens in scripts?");
   const [searchVisibility, setSearchVisibility] = useState<MemorySearchVisibility>("All");
   const [searchLimit, setSearchLimit] = useState(5);
+  const backend = useMemoryLibrarySearch({
+    query: searchQuery,
+    visibility: searchVisibility,
+    limit: searchLimit,
+  });
+  const sourceRecords = backend.records.length > 0 ? backend.records : records;
 
   const visibleMemories = useMemo(
-    () => records.filter((memory) => matchesFilters(memory, filters, activeTab)),
-    [activeTab, filters, records]
+    () => sourceRecords.filter((memory) => matchesFilters(memory, filters, activeTab)),
+    [activeTab, filters, sourceRecords]
   );
 
   const selectedMemory = useMemo(
-    () => records.find((memory) => memory.id === selectedMemoryId) ?? null,
-    [records, selectedMemoryId]
+    () => sourceRecords.find((memory) => memory.id === selectedMemoryId) ?? sourceRecords[0] ?? null,
+    [selectedMemoryId, sourceRecords]
   );
 
   const searchResults = useMemo(() => {
+    if (backend.searchResults.length > 0) {
+      return backend.searchResults;
+    }
+
     const query = searchQuery.trim().toLowerCase();
 
     return approvedMemorySearchResults
@@ -100,7 +112,7 @@ export function MemoryPage() {
           .includes(query);
       })
       .slice(0, searchLimit);
-  }, [searchLimit, searchQuery, searchVisibility]);
+  }, [backend.searchResults, searchLimit, searchQuery, searchVisibility]);
 
   const updateSelectedMemory = (updates: Partial<MemoryRecord>) => {
     if (!selectedMemoryId) {
@@ -155,6 +167,16 @@ export function MemoryPage() {
           <MemoryToolbar filters={filters} onFiltersChange={setFilters} onCreateMemory={handleCreateMemory} />
 
           <div className="min-h-0 flex-1 px-5 pt-6">
+            {backend.error ? (
+              <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+                {getErrorMessage(backend.error)}
+              </div>
+            ) : null}
+            {backend.isLoading ? (
+              <div className="mb-3 rounded-md border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-600">
+                Loading backend memory...
+              </div>
+            ) : null}
             <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
               <div className="min-h-0 flex flex-1">
                 <div className="flex min-w-0 flex-1 flex-col">
