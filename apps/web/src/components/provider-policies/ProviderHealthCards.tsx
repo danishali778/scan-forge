@@ -1,6 +1,7 @@
 import { ShieldCheck } from "lucide-react";
 
 import { healthMetrics } from "@/mocks/provider-policies";
+import type { ProviderHealthMetric } from "@/types/provider-policies";
 
 function barColor(tone: "teal" | "amber" | "red") {
   if (tone === "amber") {
@@ -14,10 +15,10 @@ function barColor(tone: "teal" | "amber" | "red") {
   return "bg-teal-700";
 }
 
-export function ProviderHealthCards() {
+export function ProviderHealthCards({ metrics = healthMetrics }: { metrics?: ProviderHealthMetric[] }) {
   return (
     <div className="grid grid-cols-3 gap-4">
-      {healthMetrics.map((metric) => (
+      {metrics.map((metric) => (
         <section key={metric.label} className="rounded-md border border-slate-200 bg-white p-5">
           <h3 className="text-base font-semibold text-slate-950">{metric.label}</h3>
           <div className="mt-5 space-y-4">

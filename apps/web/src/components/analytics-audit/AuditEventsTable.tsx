@@ -1,8 +1,9 @@
 import { CheckCircle2, Info } from "lucide-react";
 
 import { auditEvents } from "@/mocks/analytics-audit";
+import type { AuditEventRow } from "@/types/analytics-audit";
 
-export function AuditEventsTable() {
+export function AuditEventsTable({ events = auditEvents }: { events?: AuditEventRow[] }) {
   return (
     <section className="rounded-md border border-slate-200 bg-white p-4">
       <div className="flex items-center gap-2">
@@ -18,7 +19,7 @@ export function AuditEventsTable() {
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
-          {auditEvents.map((event) => (
+          {events.map((event) => (
             <tr key={`${event.time}-${event.action}`}>
               <td className="py-3 text-slate-700">{event.time}</td>
               <td className="py-3">
@@ -44,7 +45,7 @@ export function AuditEventsTable() {
         </tbody>
       </table>
       <div className="mt-4 flex items-center justify-between text-sm text-slate-500">
-        <span>Showing 1 to 7 of 87 events</span>
+        <span>Showing 1 to {events.length} of {events.length} events</span>
         <button className="font-semibold text-teal-700">View full audit log</button>
       </div>
     </section>

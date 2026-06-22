@@ -6,6 +6,8 @@ import { AdminUsersTable } from "@/components/admin-users-roles/AdminUsersTable"
 import { RolePermissionsMatrix } from "@/components/admin-users-roles/RolePermissionsMatrix";
 import { SelectedUserPanel } from "@/components/admin-users-roles/SelectedUserPanel";
 import { StatusSummaryCards } from "@/components/admin-users-roles/StatusSummaryCards";
+import { useAdminSettings } from "@/hooks/useAdminSettings";
+import { getErrorMessage } from "@/lib/errors";
 import { adminUsers, settingsTabs } from "@/mocks/admin-users-roles";
 import type { AdminRole } from "@/types/admin-users-roles";
 
@@ -16,11 +18,13 @@ export function AdminUsersRolesPage() {
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<"All roles" | AdminRole>("All roles");
   const [activeTab, setActiveTab] = useState<(typeof settingsTabs)[number]>("Users");
+  const backend = useAdminSettings();
+  const sourceUsers = backend.users.length > 0 ? backend.users : users;
 
   const visibleUsers = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return users.filter((user) => {
+    return sourceUsers.filter((user) => {
       const matchesQuery =
         normalizedQuery.length === 0 ||
         user.name.toLowerCase().includes(normalizedQuery) ||
@@ -29,9 +33,9 @@ export function AdminUsersRolesPage() {
 
       return matchesQuery && matchesRole;
     });
-  }, [query, roleFilter, users]);
+  }, [query, roleFilter, sourceUsers]);
 
-  const selectedUser = users.find((user) => user.id === selectedUserId) ?? users[0];
+  const selectedUser = sourceUsers.find((user) => user.id === selectedUserId) ?? sourceUsers[0];
 
   const toggleRow = (userId: string) => {
     setSelectedRowIds((current) =>
@@ -65,9 +69,19 @@ export function AdminUsersRolesPage() {
           <div className="flex min-h-0 flex-1 gap-3 p-3">
             <div className="min-w-0 flex-1 overflow-y-auto pr-0.5">
               <div className="space-y-3">
+                {backend.error ? (
+                  <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+                    {getErrorMessage(backend.error)}
+                  </div>
+                ) : null}
+                {backend.isLoading ? (
+                  <div className="rounded-md border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-600">
+                    Loading backend users and roles...
+                  </div>
+                ) : null}
                 <AdminUsersTable
                   users={visibleUsers}
-                  totalUsers={users.length}
+                  totalUsers={sourceUsers.length}
                   query={query}
                   roleFilter={roleFilter}
                   selectedUserId={selectedUser.id}
