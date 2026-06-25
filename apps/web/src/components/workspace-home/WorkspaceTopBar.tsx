@@ -4,9 +4,10 @@ interface WorkspaceTopBarProps {
   workspaceName: string;
   role: string;
   userName: string;
+  initials: string;
 }
 
-export function WorkspaceTopBar({ workspaceName, role, userName }: WorkspaceTopBarProps) {
+export function WorkspaceTopBar({ workspaceName, role, userName, initials }: WorkspaceTopBarProps) {
   return (
     <header className="flex h-[58px] shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4">
       <button
@@ -28,7 +29,7 @@ export function WorkspaceTopBar({ workspaceName, role, userName }: WorkspaceTopB
         <span className="rounded-md bg-cyan-100 px-3 py-1.5 text-[13px] font-semibold text-teal-800">{role}</span>
         <button type="button" className="inline-flex items-center gap-3">
           <span className="grid h-9 w-9 place-items-center rounded-full bg-[#25455d] text-[12px] font-bold text-white shadow-inner">
-            DA
+            {initials}
           </span>
           <span className="text-[13px] font-semibold text-slate-800">{userName}</span>
           <ChevronDown className="h-4 w-4 text-slate-500" />

@@ -22,12 +22,43 @@ function severityLabel(severity: Severity) {
   return severity.charAt(0).toUpperCase() + severity.slice(1);
 }
 
-export function ApprovalRequestPanel({ request }: { request: ApprovalRequest }) {
+interface ApprovalRequestPanelProps {
+  request: ApprovalRequest | null;
+  isResolving?: boolean;
+  onApprove?: (note: string) => void;
+  onDeny?: (note: string) => void;
+}
+
+export function ApprovalRequestPanel({
+  request,
+  isResolving = false,
+  onApprove,
+  onDeny,
+}: ApprovalRequestPanelProps) {
   const [decision, setDecision] = useState<"idle" | "approved" | "denied">("idle");
   const [note, setNote] = useState("");
 
+  if (!request) {
+    return (
+      <aside className="flex h-full min-h-0 self-stretch flex-col overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+        <div className="flex h-12 shrink-0 items-center justify-between border-b border-slate-200 px-4">
+          <h2 className="text-[15px] font-semibold text-slate-950">Approval request</h2>
+        </div>
+        <div className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto px-8 text-center">
+          <div>
+            <ShieldCheck className="mx-auto h-9 w-9 text-teal-600" />
+            <h3 className="mt-3 text-[15px] font-semibold text-slate-950">No pending approvals</h3>
+            <p className="mt-1 text-[12px] leading-5 text-slate-500">
+              Approval requests from policy-gated agent actions will appear here.
+            </p>
+          </div>
+        </div>
+      </aside>
+    );
+  }
+
   return (
-    <aside className="flex min-h-0 flex-col overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+    <aside className="flex h-full min-h-0 self-stretch flex-col overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
       <div className="flex h-12 shrink-0 items-center justify-between border-b border-slate-200 px-4">
         <h2 className="text-[15px] font-semibold text-slate-950">Approval request</h2>
         <div className="flex items-center gap-3 text-slate-400">
@@ -135,25 +166,35 @@ export function ApprovalRequestPanel({ request }: { request: ApprovalRequest }) 
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
-            onClick={() => setDecision("approved")}
+            disabled={isResolving}
+            onClick={() => {
+              setDecision("approved");
+              onApprove?.(note);
+            }}
             className={[
               "inline-flex h-9 items-center justify-center gap-2 rounded-md px-3 text-[13px] font-semibold text-white",
+              isResolving ? "cursor-not-allowed opacity-70" : "",
               decision === "approved" ? "bg-emerald-700" : "bg-teal-700 hover:bg-teal-800",
             ].join(" ")}
           >
             <Check className="h-4 w-4" />
-            {decision === "approved" ? "Approved" : "Approve"}
+            {isResolving && decision === "approved" ? "Approving..." : decision === "approved" ? "Approved" : "Approve"}
           </button>
           <button
             type="button"
-            onClick={() => setDecision("denied")}
+            disabled={isResolving}
+            onClick={() => {
+              setDecision("denied");
+              onDeny?.(note);
+            }}
             className={[
               "inline-flex h-9 items-center justify-center gap-2 rounded-md px-3 text-[13px] font-semibold text-white",
+              isResolving ? "cursor-not-allowed opacity-70" : "",
               decision === "denied" ? "bg-red-800" : "bg-red-600 hover:bg-red-700",
             ].join(" ")}
           >
             <X className="h-4 w-4" />
-            {decision === "denied" ? "Denied" : "Deny"}
+            {isResolving && decision === "denied" ? "Denying..." : decision === "denied" ? "Denied" : "Deny"}
           </button>
         </div>
         <textarea

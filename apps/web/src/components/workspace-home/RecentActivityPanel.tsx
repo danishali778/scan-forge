@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 
-import { activityTabs } from "@/mocks/workspace-home";
 import type { ActivityCategory, WorkspaceActivityItem, WorkspaceTone } from "@/types/workspace-home";
+
+const activityTabs = ["All", "Events", "Evidence", "Findings", "Jobs", "Approvals", "Memory"] as const;
 
 const toneClasses: Record<WorkspaceTone, string> = {
   teal: "border-teal-200 bg-teal-50 text-teal-700",
@@ -25,7 +26,7 @@ export function RecentActivityPanel({ items }: { items: WorkspaceActivityItem[] 
   }, [activeTab, items]);
 
   return (
-    <section className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+    <section className="w-full overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
       <div className="flex h-11 items-center justify-between border-b border-slate-200 px-3">
         <div className="flex items-center gap-5">
           <h2 className="text-[17px] font-semibold text-slate-950">Recent activity</h2>

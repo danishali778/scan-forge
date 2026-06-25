@@ -1,8 +1,16 @@
 import { ChevronRight, Clock3, MoreHorizontal, PauseCircle, PlayCircle } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 
-import { sessionFilterTabs } from "@/mocks/workspace-home";
+import { appRoutes } from "@/app/routes";
 import type { RuntimeStatus, SessionStatus, WorkspaceSession } from "@/types/workspace-home";
+
+const sessionFilterTabs = [
+  { label: "All", value: "all" },
+  { label: "Running", value: "running" },
+  { label: "Paused", value: "paused" },
+  { label: "Planning", value: "planning" },
+] as const;
 
 const statusClasses: Record<SessionStatus, string> = {
   running: "border-teal-200 bg-teal-50 text-teal-700",
@@ -53,12 +61,12 @@ export function ActiveSessionsPanel({ sessions }: { sessions: WorkspaceSession[]
   };
 
   return (
-    <section className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
       <div className="flex h-12 items-center justify-between border-b border-slate-200 px-4">
         <h2 className="text-[15px] font-semibold text-slate-950">Active sessions</h2>
-        <button type="button" className="text-[12px] font-semibold text-blue-700 hover:text-blue-800">
+        <Link to={appRoutes.sessions} className="text-[12px] font-semibold text-blue-700 hover:text-blue-800">
           View all
-        </button>
+        </Link>
       </div>
 
       <div className="flex h-12 items-center gap-4 border-b border-slate-200 px-3">
@@ -79,70 +87,74 @@ export function ActiveSessionsPanel({ sessions }: { sessions: WorkspaceSession[]
         ))}
       </div>
 
-      <table className="w-full table-fixed text-left text-[12px]">
-        <thead className="h-11 border-b border-slate-200 text-[11px] font-semibold text-slate-600">
-          <tr>
-            <th className="w-[34px] px-3" />
-            <th className="w-[31%] px-2">Session</th>
-            <th className="w-[15%] px-2">Project</th>
-            <th className="w-[10%] px-2">Status</th>
-            <th className="w-[17%] px-2">Current step</th>
-            <th className="w-[12%] px-2">Runtime</th>
-            <th className="w-[10%] px-2">Last event</th>
-            <th className="w-[10%] px-2">Owner</th>
-            <th className="w-[34px] px-2" />
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {filteredSessions.map((session) => (
-            <tr key={session.id} className="h-[64px] hover:bg-slate-50">
-              <td className="px-3 text-slate-500">
-                <ChevronRight className="h-4 w-4" />
-              </td>
-              <td className="px-2">
-                <div className="flex min-w-0 items-center gap-3">
-                  {session.status === "planning" ? (
-                    <Clock3 className="h-4 w-4 shrink-0 text-slate-500" />
-                  ) : session.status === "paused" ? (
-                    <PauseCircle className="h-4 w-4 shrink-0 text-slate-500" />
-                  ) : (
-                    <PlayCircle className="h-4 w-4 shrink-0 text-slate-500" />
-                  )}
-                  <div className="min-w-0">
-                    <div className="truncate font-semibold text-slate-900">{session.title}</div>
-                    <div className="mt-0.5 truncate text-[11px] text-slate-500">{session.id}</div>
-                  </div>
-                </div>
-              </td>
-              <td className="truncate px-2 text-slate-600">{session.project}</td>
-              <td className="px-2">
-                <span className={`rounded px-2 py-1 text-[11px] font-medium ${statusClasses[session.status]}`}>
-                  {statusLabel(session.status)}
-                </span>
-              </td>
-              <td className="px-2">
-                <div className="truncate font-medium text-slate-800">{session.currentStep}</div>
-                <div className="text-[11px] text-slate-500">{session.stepProgress}</div>
-              </td>
-              <td className="px-2">
-                <RuntimeCell status={session.runtimeStatus} />
-              </td>
-              <td className="px-2 text-slate-500">{session.lastEvent}</td>
-              <td className="px-2">
-                <span className="inline-flex items-center gap-2">
-                  <span className="grid h-6 w-6 place-items-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-700">
-                    {session.ownerInitials}
-                  </span>
-                  <span className="truncate text-slate-700">{session.owner}</span>
-                </span>
-              </td>
-              <td className="px-2 text-right text-slate-500">
-                <MoreHorizontal className="h-4 w-4" />
-              </td>
+      <div className="min-h-0 flex-1 overflow-auto">
+        <table className="w-full table-fixed text-left text-[12px]">
+          <thead className="sticky top-0 z-10 h-11 border-b border-slate-200 bg-white text-[11px] font-semibold text-slate-600">
+            <tr>
+              <th className="w-[34px] px-3" />
+              <th className="w-[31%] px-2">Session</th>
+              <th className="w-[15%] px-2">Project</th>
+              <th className="w-[10%] px-2">Status</th>
+              <th className="w-[17%] px-2">Current step</th>
+              <th className="w-[12%] px-2">Runtime</th>
+              <th className="w-[10%] px-2">Last event</th>
+              <th className="w-[10%] px-2">Owner</th>
+              <th className="w-[34px] px-2" />
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {filteredSessions.map((session) => (
+              <tr key={session.id} className="h-[64px] hover:bg-slate-50">
+                <td className="px-3 text-slate-500">
+                  <Link to={appRoutes.session(session.id)} aria-label={`Open ${session.title}`}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                </td>
+                <td className="px-2">
+                  <div className="flex min-w-0 items-center gap-3">
+                    {session.status === "planning" ? (
+                      <Clock3 className="h-4 w-4 shrink-0 text-slate-500" />
+                    ) : session.status === "paused" ? (
+                      <PauseCircle className="h-4 w-4 shrink-0 text-slate-500" />
+                    ) : (
+                      <PlayCircle className="h-4 w-4 shrink-0 text-slate-500" />
+                    )}
+                    <div className="min-w-0">
+                      <div className="truncate font-semibold text-slate-900">{session.title}</div>
+                      <div className="mt-0.5 truncate text-[11px] text-slate-500">{session.id}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="truncate px-2 text-slate-600">{session.project}</td>
+                <td className="px-2">
+                  <span className={`rounded px-2 py-1 text-[11px] font-medium ${statusClasses[session.status]}`}>
+                    {statusLabel(session.status)}
+                  </span>
+                </td>
+                <td className="px-2">
+                  <div className="truncate font-medium text-slate-800">{session.currentStep}</div>
+                  <div className="text-[11px] text-slate-500">{session.stepProgress}</div>
+                </td>
+                <td className="px-2">
+                  <RuntimeCell status={session.runtimeStatus} />
+                </td>
+                <td className="px-2 text-slate-500">{session.lastEvent}</td>
+                <td className="px-2">
+                  <span className="inline-flex items-center gap-2">
+                    <span className="grid h-6 w-6 place-items-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-700">
+                      {session.ownerInitials}
+                    </span>
+                    <span className="truncate text-slate-700">{session.owner}</span>
+                  </span>
+                </td>
+                <td className="px-2 text-right text-slate-500">
+                  <MoreHorizontal className="h-4 w-4" />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }
