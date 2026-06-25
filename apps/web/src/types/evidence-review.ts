@@ -4,7 +4,14 @@ export type EvidenceType = "terminal" | "file" | "database" | "note";
 export type EvidenceStatus = "reviewed" | "candidate" | "confirmed";
 export type Severity = "Low" | "Medium" | "High" | "Critical";
 export type Confidence = "Low" | "Medium" | "High";
-export type FindingStatus = "Needs review" | "Ready for review" | "Approved";
+export type FindingStatus =
+  | "Needs review"
+  | "Ready for review"
+  | "Confirmed"
+  | "False positive"
+  | "Accepted risk"
+  | "Fixed"
+  | "Archived";
 export type EvidenceTone = "teal" | "blue" | "green" | "amber" | "red" | "slate";
 
 export interface EvidenceNavItem {
@@ -125,4 +132,15 @@ export interface ApiFinding {
 export interface FindingReviewRequest {
   status: string;
   review_note?: string | null;
+}
+
+export interface FindingUpdateRequest {
+  title?: string | null;
+  severity?: string | null;
+  confidence?: string | null;
+  description?: string | null;
+  impact?: string | null;
+  reproduction_steps?: string | null;
+  remediation?: string | null;
+  status?: string | null;
 }

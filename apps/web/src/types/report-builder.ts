@@ -93,7 +93,7 @@ export type ReportCollaborator = {
   name: string;
 };
 
-export type ReportBuilderMock = {
+export type ReportBuilderData = {
   title: string;
   status: "Draft" | "Finalized";
   sessionName: string;
@@ -111,6 +111,8 @@ export type ReportBuilderMock = {
   navigation: ReportNavItem[];
 };
 
+export type ReportBuilderMock = ReportBuilderData;
+
 export type ApiReport = {
   id: string;
   project_id: string;
@@ -123,3 +125,19 @@ export type ApiReport = {
   created_at: string;
   updated_at: string;
 };
+
+export interface ReportCreateRequest {
+  title?: string | null;
+}
+
+export interface ReportUpdateRequest {
+  title?: string | null;
+}
+
+export interface ReportExportResponse {
+  report_id: string;
+  format: string;
+  filename: string;
+  content: string;
+  asset_id: string;
+}

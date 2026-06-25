@@ -65,9 +65,8 @@ export function ReportInspectorPanel({
             <section>
               <h3 className="text-base font-semibold text-slate-950">Executive Summary (preview)</h3>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                This assessment of Acme's external staging environment identified three significant issues. One high severity
-                issue remains confirmed and should be addressed. One medium issue has been accepted as risk. One high severity
-                issue has been fixed.
+                This preview is generated from backend report data. Render the report to persist deterministic Markdown and JSON
+                export content for this session.
               </p>
             </section>
 
@@ -92,8 +91,7 @@ export function ReportInspectorPanel({
           <section className="rounded-md border border-slate-200 bg-slate-50 p-4">
             <h3 className="text-sm font-semibold text-slate-900">{activeTab} workspace</h3>
             <p className="mt-1 text-sm leading-6 text-slate-600">
-              Page-local mock data is ready for this inspector state. Use the tabs to review export artifacts, events, and
-              readiness without leaving the report builder.
+              Backend report metadata is shown here as it becomes available. Render or export the report to create stored assets.
             </p>
           </section>
         )}
@@ -101,7 +99,7 @@ export function ReportInspectorPanel({
         <section>
           <h3 className="text-base font-semibold text-slate-950">Evidence References</h3>
           <div className="mt-3 space-y-2">
-            {evidence.map((item) => (
+            {evidence.length > 0 ? evidence.map((item) => (
               <div key={item.id} className="flex min-w-0 items-center gap-2 text-sm">
                 <FileText className="h-4 w-4 shrink-0 text-slate-500" />
                 <a href="#evidence" className="font-semibold text-blue-600 hover:text-blue-700">
@@ -109,17 +107,14 @@ export function ReportInspectorPanel({
                 </a>
                 <span className="truncate text-xs text-slate-500">{item.label}</span>
               </div>
-            ))}
+            )) : <div className="rounded-md border border-dashed border-slate-300 px-3 py-3 text-sm text-slate-500">No backend evidence references yet.</div>}
           </div>
-          <button type="button" className="mt-3 text-sm font-semibold text-blue-600 hover:text-blue-700">
-            +6 more evidence items
-          </button>
         </section>
 
         <section>
           <h3 className="text-base font-semibold text-slate-950">Export Events (latest)</h3>
           <div className="mt-3 space-y-3">
-            {exportAssets.map((asset) => (
+            {exportAssets.length > 0 ? exportAssets.map((asset) => (
               <div key={asset.name} className="grid grid-cols-[1fr_64px_64px] items-center gap-3 text-sm">
                 <span className="min-w-0">
                   <span className="inline-flex min-w-0 items-center gap-2">
@@ -133,9 +128,9 @@ export function ReportInspectorPanel({
                 <span className="text-xs text-slate-500">{asset.size}</span>
                 <span className="text-xs text-slate-500">{asset.generatedAgo}</span>
               </div>
-            ))}
+            )) : <div className="rounded-md border border-dashed border-slate-300 px-3 py-3 text-sm text-slate-500">No export assets have been created yet.</div>}
           </div>
-          <button type="button" className="mt-3 text-sm font-semibold text-blue-600 hover:text-blue-700">
+          <button type="button" disabled className="mt-3 cursor-not-allowed text-sm font-semibold text-slate-400">
             View all export assets
           </button>
         </section>
