@@ -1,12 +1,20 @@
-import { memoryTabs } from "@/mocks/memory-library";
 import type { MemoryTabKey } from "@/types/memory-library";
 
 import { TabIcon } from "./MemoryBadges";
 
 interface MemoryStatusTabsProps {
   activeTab: MemoryTabKey;
+  counts: Record<MemoryTabKey, number>;
   onTabChange: (tab: MemoryTabKey) => void;
 }
+
+const memoryTabs: Array<{ key: MemoryTabKey; label: string }> = [
+  { key: "Candidate", label: "Candidate" },
+  { key: "Approved", label: "Approved" },
+  { key: "Rejected", label: "Rejected" },
+  { key: "Archived", label: "Archived" },
+  { key: "Blocked", label: "Blocked" },
+];
 
 const activeStyles: Record<MemoryTabKey, string> = {
   Candidate: "border-amber-500 text-amber-700",
@@ -16,7 +24,7 @@ const activeStyles: Record<MemoryTabKey, string> = {
   Blocked: "border-red-500 text-red-700",
 };
 
-export function MemoryStatusTabs({ activeTab, onTabChange }: MemoryStatusTabsProps) {
+export function MemoryStatusTabs({ activeTab, counts, onTabChange }: MemoryStatusTabsProps) {
   return (
     <div className="flex h-[58px] shrink-0 items-end gap-7 border-b border-slate-200 bg-white px-4">
       {memoryTabs.map((tab) => {
@@ -34,7 +42,7 @@ export function MemoryStatusTabs({ activeTab, onTabChange }: MemoryStatusTabsPro
             <TabIcon status={tab.key} active={isActive} />
             {tab.label}
             <span className="ml-1 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-xs font-semibold text-slate-500">
-              {tab.count}
+              {counts[tab.key]}
             </span>
           </button>
         );

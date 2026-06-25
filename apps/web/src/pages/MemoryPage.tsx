@@ -1,29 +1,32 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { AppSidebar } from "@/components/layout/AppSidebar";
 import { MemoryHeader } from "@/components/memory-library/MemoryHeader";
 import { MemorySearchPanel } from "@/components/memory-library/MemorySearchPanel";
-import { MemorySidebar } from "@/components/memory-library/MemorySidebar";
 import { MemoryStatusTabs } from "@/components/memory-library/MemoryStatusTabs";
 import { MemoryTable } from "@/components/memory-library/MemoryTable";
 import { MemoryToolbar } from "@/components/memory-library/MemoryToolbar";
 import { SelectedMemoryPanel } from "@/components/memory-library/SelectedMemoryPanel";
-import { useMemoryLibrarySearch } from "@/hooks/useMemoryLibrary";
+import { useMemoryLibraryActions, useMemoryLibrarySearch } from "@/hooks/useMemoryLibrary";
 import { getErrorMessage } from "@/lib/errors";
-import {
-  approvedMemorySearchResults,
-  initialMemoryFilters,
-  memoryRecords,
-  newMemoryDraft,
-} from "@/mocks/memory-library";
 import type {
   MemoryFilterState,
   MemoryRecord,
   MemorySearchVisibility,
   MemoryStatus,
   MemoryTabKey,
+  MemoryUpdateRequest,
 } from "@/types/memory-library";
 
 const openStatuses: MemoryStatus[] = ["Candidate", "Approved", "Rejected", "Blocked"];
+const initialMemoryFilters: MemoryFilterState = {
+  query: "",
+  visibility: "All",
+  source: "All",
+  status: "Open",
+  project: "All projects",
+  session: "All sessions",
+};
 
 function matchesText(memory: MemoryRecord, query: string) {
   if (!query) {
@@ -46,7 +49,7 @@ function matchesText(memory: MemoryRecord, query: string) {
 }
 
 function matchesFilters(memory: MemoryRecord, filters: MemoryFilterState, activeTab: MemoryTabKey) {
-  const matchesTab = activeTab === "Candidate" ? memory.status !== "Archived" : memory.status === activeTab;
+  const matchesTab = memory.status === activeTab;
   const matchesStatus =
     filters.status === "All"
       ? true
@@ -66,13 +69,12 @@ function matchesFilters(memory: MemoryRecord, filters: MemoryFilterState, active
 }
 
 export function MemoryPage() {
-  const [records, setRecords] = useState(memoryRecords);
   const [filters, setFilters] = useState(initialMemoryFilters);
   const [activeTab, setActiveTab] = useState<MemoryTabKey>("Candidate");
-  const [selectedMemoryId, setSelectedMemoryId] = useState<string | null>("api-token-handling");
-  const [checkedMemoryIds, setCheckedMemoryIds] = useState<string[]>(["auth-flow-behavior"]);
+  const [selectedMemoryId, setSelectedMemoryId] = useState<string | null>(null);
+  const [checkedMemoryIds, setCheckedMemoryIds] = useState<string[]>([]);
   const [reviewNote, setReviewNote] = useState("");
-  const [searchQuery, setSearchQuery] = useState("How do we handle tokens in scripts?");
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchVisibility, setSearchVisibility] = useState<MemorySearchVisibility>("All");
   const [searchLimit, setSearchLimit] = useState(5);
   const backend = useMemoryLibrarySearch({
@@ -80,7 +82,19 @@ export function MemoryPage() {
     visibility: searchVisibility,
     limit: searchLimit,
   });
-  const sourceRecords = backend.records.length > 0 ? backend.records : records;
+  const actions = useMemoryLibraryActions();
+  const sourceRecords = backend.records;
+
+  useEffect(() => {
+    if (sourceRecords.length === 0) {
+      setSelectedMemoryId(null);
+      return;
+    }
+
+    if (!selectedMemoryId || !sourceRecords.some((memory) => memory.id === selectedMemoryId)) {
+      setSelectedMemoryId(sourceRecords[0].id);
+    }
+  }, [selectedMemoryId, sourceRecords]);
 
   const visibleMemories = useMemo(
     () => sourceRecords.filter((memory) => matchesFilters(memory, filters, activeTab)),
@@ -92,52 +106,103 @@ export function MemoryPage() {
     [selectedMemoryId, sourceRecords]
   );
 
-  const searchResults = useMemo(() => {
-    if (backend.searchResults.length > 0) {
-      return backend.searchResults;
+  const selectedDocument = useMemo(
+    () => backend.documents.find((document) => document.id === selectedMemory?.id) ?? null,
+    [backend.documents, selectedMemory?.id]
+  );
+
+  const statusCounts = useMemo(
+    () =>
+      sourceRecords.reduce<Record<MemoryTabKey, number>>(
+        (counts, memory) => {
+          counts[memory.status] += 1;
+          return counts;
+        },
+        { Candidate: 0, Approved: 0, Rejected: 0, Archived: 0, Blocked: 0 }
+      ),
+    [sourceRecords]
+  );
+
+  const projectOptions = useMemo(
+    () => ["All projects", ...Array.from(new Set(sourceRecords.map((memory) => memory.project).filter(Boolean)))],
+    [sourceRecords]
+  );
+
+  const sessionOptions = useMemo(
+    () => ["All sessions", ...Array.from(new Set(sourceRecords.map((memory) => memory.session).filter(Boolean)))],
+    [sourceRecords]
+  );
+
+  const handleCreateMemory = () => {
+    actions.create.mutate(
+      {
+        title: "Manual memory candidate",
+        summary: "Draft reusable knowledge created from the Memory page.",
+        content: "Replace this draft with reviewed knowledge before approving it for agent retrieval.",
+        visibility: "workspace",
+        source_type: "manual",
+        provider_profile_id: backend.defaultProviderProfileId,
+        metadata: { created_from: "memory_page" },
+      },
+      {
+        onSuccess: (document) => {
+          setSelectedMemoryId(document.id);
+          setCheckedMemoryIds((currentIds) =>
+            currentIds.includes(document.id) ? currentIds : [document.id, ...currentIds]
+          );
+        },
+      }
+    );
+  };
+
+  const handleApproveMemory = () => {
+    if (!selectedDocument) {
+      return;
     }
 
-    const query = searchQuery.trim().toLowerCase();
+    actions.approve.mutate({
+      document: selectedDocument,
+      request: {
+        review_note: reviewNote || null,
+        provider_profile_id: selectedDocument.provider_profile_id ?? backend.defaultProviderProfileId,
+      },
+    });
+  };
 
-    return approvedMemorySearchResults
-      .filter((result) => searchVisibility === "All" || result.visibility === searchVisibility)
-      .filter((result) => {
-        if (!query) {
-          return true;
-        }
-
-        return [result.chunkPreview, result.fromTitle, result.fromDoc, result.scope, result.relevance]
-          .join(" ")
-          .toLowerCase()
-          .includes(query);
-      })
-      .slice(0, searchLimit);
-  }, [backend.searchResults, searchLimit, searchQuery, searchVisibility]);
-
-  const updateSelectedMemory = (updates: Partial<MemoryRecord>) => {
+  const handleRejectMemory = () => {
     if (!selectedMemoryId) {
       return;
     }
 
-    setRecords((currentRecords) =>
-      currentRecords.map((memory) =>
-        memory.id === selectedMemoryId ? { ...memory, ...updates, reviewedBy: "Danish Ali", updatedAt: "Just now" } : memory
-      )
-    );
+    actions.reject.mutate({
+      documentId: selectedMemoryId,
+      request: { review_note: reviewNote || null },
+    });
   };
 
-  const handleCreateMemory = () => {
-    setRecords((currentRecords) => {
-      if (currentRecords.some((memory) => memory.id === newMemoryDraft.id)) {
-        return currentRecords;
-      }
+  const handlePromoteMemory = () => {
+    if (!selectedMemory) {
+      return;
+    }
 
-      return [newMemoryDraft, ...currentRecords];
+    actions.promote.mutate({
+      documentId: selectedMemory.id,
+      request: {
+        visibility: selectedMemory.visibility === "Session" ? "project" : "workspace",
+        review_note: reviewNote || null,
+      },
     });
-    setSelectedMemoryId(newMemoryDraft.id);
-    setCheckedMemoryIds((currentIds) =>
-      currentIds.includes(newMemoryDraft.id) ? currentIds : [newMemoryDraft.id, ...currentIds]
-    );
+  };
+
+  const handleUpdateMemory = (request: MemoryUpdateRequest) => {
+    if (!selectedMemoryId) {
+      return;
+    }
+
+    actions.update.mutate({
+      documentId: selectedMemoryId,
+      request,
+    });
   };
 
   const handleToggleMemory = (memoryId: string) => {
@@ -157,19 +222,47 @@ export function MemoryPage() {
     );
   };
 
+  const selectedProviderProfileId = selectedDocument?.provider_profile_id ?? backend.defaultProviderProfileId;
+  const canApprove =
+    Boolean(selectedMemory) &&
+    selectedMemory?.status !== "Approved" &&
+    selectedMemory?.secretScan !== "Flagged" &&
+    Boolean(selectedProviderProfileId);
+  const canPromote = Boolean(selectedMemory) && selectedMemory?.status === "Approved" && selectedMemory?.visibility !== "Workspace";
+  const actionMessage = !backend.defaultProviderProfileId
+    ? "Memory approval and semantic search require at least one provider profile with embeddings configured."
+    : selectedMemory?.secretScan === "Flagged"
+      ? "Secret scan flagged this memory. Edit the content before approval."
+      : actions.error
+        ? getErrorMessage(actions.error)
+        : backend.searchRequiresProvider
+          ? "Memory search requires a provider profile with embeddings configured."
+          : null;
+
   return (
     <div className="h-screen overflow-hidden bg-slate-100 text-slate-900">
-      <div className="flex h-full min-w-[1560px]">
-        <MemorySidebar />
+      <div className="flex h-full">
+        <AppSidebar />
 
-        <main className="flex min-w-0 flex-1 flex-col">
+        <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <MemoryHeader />
-          <MemoryToolbar filters={filters} onFiltersChange={setFilters} onCreateMemory={handleCreateMemory} />
+          <div className="overflow-x-auto border-b border-slate-200 bg-white">
+            <div className="min-w-[1460px]">
+              <MemoryToolbar
+                filters={filters}
+                projectOptions={projectOptions}
+                sessionOptions={sessionOptions}
+                onFiltersChange={setFilters}
+                onCreateMemory={handleCreateMemory}
+                isCreating={actions.create.isPending}
+              />
+            </div>
+          </div>
 
-          <div className="min-h-0 flex-1 px-5 pt-6">
-            {backend.error ? (
+          <div className="min-h-0 flex-1 overflow-auto px-5 pt-6">
+            {backend.error || actions.error ? (
               <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
-                {getErrorMessage(backend.error)}
+                {getErrorMessage(backend.error ?? actions.error)}
               </div>
             ) : null}
             {backend.isLoading ? (
@@ -177,10 +270,10 @@ export function MemoryPage() {
                 Loading backend memory...
               </div>
             ) : null}
-            <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div className="flex h-full min-h-[760px] min-w-[1460px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
               <div className="min-h-0 flex flex-1">
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <MemoryStatusTabs activeTab={activeTab} onTabChange={setActiveTab} />
+                  <MemoryStatusTabs activeTab={activeTab} counts={statusCounts} onTabChange={setActiveTab} />
                   <MemoryTable
                     memories={visibleMemories}
                     checkedMemoryIds={checkedMemoryIds}
@@ -195,19 +288,15 @@ export function MemoryPage() {
                   memory={selectedMemory}
                   reviewNote={reviewNote}
                   onReviewNoteChange={setReviewNote}
-                  onApprove={() => updateSelectedMemory({ status: "Approved", embedding: "Pending" })}
-                  onReject={() => updateSelectedMemory({ status: "Rejected", embedding: "None" })}
-                  onPromote={() =>
-                    updateSelectedMemory({
-                      visibility: "Workspace",
-                      status: "Approved",
-                      embedding: "Pending",
-                      project: "All projects",
-                      session: "All sessions",
-                      scope: { workspace: "Acme Security" },
-                    })
-                  }
+                  onApprove={handleApproveMemory}
+                  onReject={handleRejectMemory}
+                  onPromote={handlePromoteMemory}
+                  onUpdate={handleUpdateMemory}
                   onClose={() => setSelectedMemoryId(null)}
+                  isBusy={actions.isBusy}
+                  canApprove={canApprove}
+                  canPromote={canPromote}
+                  actionMessage={actionMessage}
                 />
               </div>
 
@@ -215,7 +304,7 @@ export function MemoryPage() {
                 query={searchQuery}
                 visibility={searchVisibility}
                 limit={searchLimit}
-                results={searchResults}
+                results={backend.searchResults}
                 onQueryChange={setSearchQuery}
                 onVisibilityChange={setSearchVisibility}
                 onLimitChange={setSearchLimit}

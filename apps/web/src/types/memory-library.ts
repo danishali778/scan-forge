@@ -33,6 +33,7 @@ export type MemoryRecord = {
   reviewedBy: string | null;
   updatedAt: string;
   summary: string;
+  content?: string;
   contentPreview: string;
   sourceLabel: string;
   sourceContext: string;
@@ -113,4 +114,35 @@ export type MemorySearchRequest = {
 
 export type MemorySearchResponse = {
   items: ApiMemorySearchResult[];
+};
+
+export type MemoryCreateRequest = {
+  title: string;
+  summary: string;
+  content: string;
+  visibility?: string;
+  project_id?: string | null;
+  session_id?: string | null;
+  source_type?: string;
+  metadata?: Record<string, unknown>;
+  provider_profile_id?: string | null;
+};
+
+export type MemoryUpdateRequest = {
+  title?: string | null;
+  summary?: string | null;
+  content?: string | null;
+  visibility?: string | null;
+  metadata?: Record<string, unknown> | null;
+  provider_profile_id?: string | null;
+};
+
+export type MemoryReviewRequest = {
+  review_note?: string | null;
+  provider_profile_id?: string | null;
+};
+
+export type MemoryPromoteRequest = {
+  visibility: string;
+  review_note?: string | null;
 };
