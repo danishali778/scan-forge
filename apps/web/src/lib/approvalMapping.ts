@@ -1,5 +1,4 @@
 import { formatEventTime, humanizeStatus } from "@/lib/formatters";
-import { approvalRequesters } from "@/mocks/approval-queue";
 import type {
   ApiApproval,
   ApprovalActionKind,
@@ -7,7 +6,18 @@ import type {
   ApprovalRequest,
   ApprovalRisk,
   ApprovalStatus,
+  ApprovalUserColor,
 } from "@/types/approval-queue";
+
+const fallbackRequester = {
+  id: "backend-agent",
+  name: "Agent",
+  initials: "AG",
+  role: "Policy engine",
+  email: "agent@scopeforge.local",
+  userId: "agent",
+  color: "slate" as ApprovalUserColor,
+};
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
@@ -99,9 +109,9 @@ export function mapApproval(approval: ApiApproval): ApprovalRequest {
   const action = asRecord(approval.requested_action);
   const argumentsValue = asRecord(action.arguments);
   const actionType = asString(action.tool_name, asString(action.action_type, "terminal.execute"));
-  const requester = approvalRequesters[0];
   const title = humanizeStatus(actionType.replace(".", " "));
   const command = commandText(action);
+  const requesterName = approval.requested_by_agent || fallbackRequester.name;
 
   return {
     id: approval.id,
@@ -112,15 +122,17 @@ export function mapApproval(approval: ApiApproval): ApprovalRequest {
     risk,
     policyDecision: policyDecision(status),
     requester: {
-      ...requester,
-      name: approval.requested_by_agent || requester.name,
-      initials: (approval.requested_by_agent || requester.name).slice(0, 2).toUpperCase(),
+      ...fallbackRequester,
+      name: requesterName,
+      initials: requesterName.slice(0, 2).toUpperCase(),
       email: `${approval.requested_by_agent || "agent"}@scopeforge.local`,
-      userId: approval.requested_by_agent || requester.userId,
+      userId: approval.requested_by_agent || fallbackRequester.userId,
     },
     age: ageLabel(approval.created_at),
     status,
     requestedAt: status === "pending" ? `Requested ${ageLabel(approval.created_at)}` : `Resolved ${formatEventTime(approval.resolved_at ?? approval.created_at)}`,
+    createdAt: approval.created_at,
+    resolvedAt: approval.resolved_at,
     sessionId: approval.session_id,
     sessionName: `Session ${approval.session_id.slice(0, 8)}`,
     project: `Session ${approval.session_id.slice(0, 8)}`,

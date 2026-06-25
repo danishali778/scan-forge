@@ -28,6 +28,11 @@ export function ApprovalOutcomesPanel({ outcomes }: ApprovalOutcomesPanelProps) 
       </div>
 
       <div className="space-y-4 px-4 py-4">
+        {outcomes.length === 0 ? (
+          <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-[13px] text-slate-500">
+            No resolved approvals have been returned by the backend yet.
+          </div>
+        ) : null}
         {outcomes.map((outcome) => {
           const style = outcomeStyles[outcome.status];
           const Icon = style.icon;

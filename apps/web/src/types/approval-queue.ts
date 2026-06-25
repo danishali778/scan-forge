@@ -76,6 +76,8 @@ export type ApprovalRequest = {
   age: string;
   status: ApprovalStatus;
   requestedAt: string;
+  createdAt?: string;
+  resolvedAt?: string | null;
   sessionId: string;
   sessionName: string;
   project: string;
