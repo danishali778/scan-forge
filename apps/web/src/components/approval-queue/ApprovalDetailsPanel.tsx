@@ -30,6 +30,7 @@ type ApprovalDetailsPanelProps = {
   onAskRevision: () => void;
   onApplyDecision: (status: Extract<ApprovalStatus, "approved" | "denied">) => void;
   isDecisionPending?: boolean;
+  canAskRevision?: boolean;
 };
 
 const tabs: { key: DetailTab; label: string }[] = [
@@ -63,9 +64,11 @@ export function ApprovalDetailsPanel({
   onAskRevision,
   onApplyDecision,
   isDecisionPending = false,
+  canAskRevision = true,
 }: ApprovalDetailsPanelProps) {
   const decisionLocked = request.status !== "pending";
   const decisionDisabled = decisionLocked || isDecisionPending;
+  const revisionDisabled = decisionDisabled || !canAskRevision;
 
   return (
     <aside className="flex w-[500px] shrink-0 flex-col rounded-tl-lg border border-slate-200 bg-white shadow-sm">
@@ -153,7 +156,8 @@ export function ApprovalDetailsPanel({
                 type="button"
                 className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-[13px] font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={onAskRevision}
-                disabled={decisionDisabled}
+                disabled={revisionDisabled}
+                title={!canAskRevision ? "Revision requests are not exposed by the backend yet." : undefined}
               >
                 <MessageSquarePlus className="h-4 w-4" />
                 Ask for revision

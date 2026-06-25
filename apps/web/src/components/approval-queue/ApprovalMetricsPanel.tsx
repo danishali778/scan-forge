@@ -6,6 +6,10 @@ type ApprovalMetricsPanelProps = {
   metrics: ApprovalMetric[];
   riskSummary: ApprovalRiskSummary[];
   timeSeries: number[];
+  averageResolutionLabel: string;
+  dateRangeLabel: string;
+  timeSeriesStartLabel: string;
+  timeSeriesEndLabel: string;
 };
 
 const riskColors: Record<ApprovalRisk, string> = {
@@ -14,12 +18,45 @@ const riskColors: Record<ApprovalRisk, string> = {
   low: "bg-emerald-500",
 };
 
-export function ApprovalMetricsPanel({ metrics, riskSummary, timeSeries }: ApprovalMetricsPanelProps) {
+const riskGradientColors: Record<ApprovalRisk, string> = {
+  high: "#ef4444",
+  medium: "#f59e0b",
+  low: "#22c55e",
+};
+
+function riskGradient(riskSummary: ApprovalRiskSummary[]) {
+  const total = riskSummary.reduce((sum, item) => sum + item.count, 0);
+
+  if (total === 0) {
+    return "#e2e8f0";
+  }
+
+  let cursor = 0;
+
+  return `conic-gradient(${riskSummary
+    .map((item) => {
+      const start = cursor;
+      const next = cursor + (item.count / total) * 100;
+      cursor = next;
+      return `${riskGradientColors[item.risk]} ${start}% ${next}%`;
+    })
+    .join(", ")})`;
+}
+
+export function ApprovalMetricsPanel({
+  metrics,
+  riskSummary,
+  timeSeries,
+  averageResolutionLabel,
+  dateRangeLabel,
+  timeSeriesStartLabel,
+  timeSeriesEndLabel,
+}: ApprovalMetricsPanelProps) {
   return (
     <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="flex h-[52px] items-center justify-between border-b border-slate-200 px-4">
         <h2 className="text-[15px] font-semibold text-slate-950">
-          Approval metrics <span className="font-medium text-slate-500">(last 30 days)</span>
+          Approval metrics <span className="font-medium text-slate-500">({dateRangeLabel})</span>
         </h2>
         <button
           type="button"
@@ -50,7 +87,7 @@ export function ApprovalMetricsPanel({ metrics, riskSummary, timeSeries }: Appro
             <div
               className="h-[100px] w-[100px] rounded-full"
               style={{
-                background: "conic-gradient(#ef4444 0 22%, #f59e0b 22% 67%, #22c55e 67% 100%)",
+                background: riskGradient(riskSummary),
               }}
             >
               <div className="m-[24px] h-[52px] w-[52px] rounded-full bg-white" />
@@ -73,23 +110,20 @@ export function ApprovalMetricsPanel({ metrics, riskSummary, timeSeries }: Appro
 
         <div className="rounded-lg border border-slate-200 p-4">
           <h3 className="text-[13px] font-semibold text-slate-950">Avg. time to decision</h3>
-          <div className="mt-4 text-[24px] font-semibold leading-none text-slate-950">18m 42s</div>
-          <div className="mt-3 inline-flex items-center gap-1 text-[12px] font-semibold text-emerald-600">
-            <ArrowDown className="h-3.5 w-3.5" />
-            15% vs prior 30d
-          </div>
+          <div className="mt-4 text-[24px] font-semibold leading-none text-slate-950">{averageResolutionLabel}</div>
+          <div className="mt-3 text-[12px] font-semibold text-slate-500">From resolved backend approvals</div>
           <div className="mt-5 flex h-[58px] items-end gap-2">
             {timeSeries.map((value, index) => (
               <span
                 key={`${value}-${index}`}
-                className="w-2 rounded-t-sm bg-blue-400/85"
-                style={{ height: `${Math.max(12, value)}%` }}
+                className={value > 0 ? "w-2 rounded-t-sm bg-blue-400/85" : "w-2 rounded-t-sm bg-slate-200"}
+                style={{ height: `${value > 0 ? Math.max(12, value) : 4}%` }}
               />
             ))}
           </div>
           <div className="mt-2 flex justify-between text-[11px] text-slate-500">
-            <span>Jun 12</span>
-            <span>Jun 19</span>
+            <span>{timeSeriesStartLabel}</span>
+            <span>{timeSeriesEndLabel}</span>
           </div>
         </div>
       </div>

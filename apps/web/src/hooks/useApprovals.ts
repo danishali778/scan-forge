@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { getAnalyticsApprovals } from "@/api/analytics";
 import { approveApproval, denyApproval, listApprovals } from "@/api/approvals";
 import { pageItems } from "@/lib/apiPages";
 import { mapApproval } from "@/lib/approvalMapping";
@@ -7,6 +8,7 @@ import type { ApprovalResolveRequest } from "@/types/approval-queue";
 
 const approvalKeys = {
   list: (status?: string) => ["approvals", status ?? "all"] as const,
+  analytics: ["analytics", "approvals"] as const,
 };
 
 export function useApprovals(status?: string) {
@@ -24,11 +26,20 @@ export function useApprovals(status?: string) {
   };
 }
 
+export function useApprovalAnalytics() {
+  return useQuery({
+    queryKey: approvalKeys.analytics,
+    queryFn: getAnalyticsApprovals,
+    refetchInterval: 30_000,
+  });
+}
+
 export function useApprovalDecision() {
   const queryClient = useQueryClient();
 
   const invalidateApprovals = () => {
     void queryClient.invalidateQueries({ queryKey: ["approvals"] });
+    void queryClient.invalidateQueries({ queryKey: approvalKeys.analytics });
   };
 
   const approve = useMutation({

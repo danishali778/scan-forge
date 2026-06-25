@@ -82,6 +82,13 @@ export function ApprovalQueueTable({
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200">
+          {visibleRequests.length === 0 ? (
+            <tr>
+              <td colSpan={8} className="h-[220px] px-4 text-center text-[13px] text-slate-500">
+                No approval requests match the current backend filters.
+              </td>
+            </tr>
+          ) : null}
           {visibleRequests.map((request) => {
             const Icon = actionIcons[request.actionKind];
             const selected = selectedId === request.id;
