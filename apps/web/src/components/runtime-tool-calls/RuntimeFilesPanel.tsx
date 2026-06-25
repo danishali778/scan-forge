@@ -57,7 +57,7 @@ export function RuntimeFilesPanel({ fileTree, recentWrites }: { fileTree: FileNo
 
   return (
     <section className="h-full min-h-0 overflow-hidden border-r border-t border-slate-200 bg-white">
-      <div className="grid h-full grid-cols-[360px_minmax(0,1fr)]">
+      <div className="grid h-full min-h-0 grid-cols-[320px_minmax(0,1fr)]">
         <div className="min-h-0 border-r border-slate-200">
           <div className="flex h-[48px] items-end gap-6 border-b border-slate-200 px-5">
             <button

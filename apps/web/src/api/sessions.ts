@@ -52,8 +52,26 @@ export function pauseSession(sessionId: string): Promise<ApiSessionDetail> {
   });
 }
 
+export function startSession(sessionId: string): Promise<ApiSessionDetail> {
+  return apiRequest<ApiSessionDetail>(`/sessions/${sessionId}/start`, {
+    method: "POST",
+  });
+}
+
+export function resumeSession(sessionId: string): Promise<ApiSessionDetail> {
+  return apiRequest<ApiSessionDetail>(`/sessions/${sessionId}/resume`, {
+    method: "POST",
+  });
+}
+
 export function stopSession(sessionId: string): Promise<ApiSessionDetail> {
   return apiRequest<ApiSessionDetail>(`/sessions/${sessionId}/stop`, {
+    method: "POST",
+  });
+}
+
+export function archiveSession(sessionId: string): Promise<ApiSessionDetail> {
+  return apiRequest<ApiSessionDetail>(`/sessions/${sessionId}/archive`, {
     method: "POST",
   });
 }

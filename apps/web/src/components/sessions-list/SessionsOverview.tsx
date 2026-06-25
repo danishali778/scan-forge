@@ -1,6 +1,11 @@
-import { sessionOverviewStatuses, sessionsOverviewMetrics } from "@/mocks/sessions-list";
+import type { SessionsOverviewMetric, SessionOverviewStatus } from "@/types/sessions-list";
 
-export function SessionsOverview() {
+interface SessionsOverviewProps {
+  metrics: SessionsOverviewMetric[];
+  statuses: SessionOverviewStatus[];
+}
+
+export function SessionsOverview({ metrics, statuses }: SessionsOverviewProps) {
   return (
     <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="flex h-11 items-center gap-2 border-b border-slate-200 px-4">
@@ -22,7 +27,7 @@ export function SessionsOverview() {
 
           <div className="min-w-0 flex-1 space-y-1">
             <div className="mb-2 text-[12px] font-semibold text-slate-950">Sessions by status</div>
-            {sessionOverviewStatuses.map((item) => (
+            {statuses.map((item) => (
               <div key={item.status} className="flex items-center justify-between gap-2 text-[11px] text-slate-600">
                 <span className="inline-flex min-w-0 items-center gap-2">
                   <span className={`h-2 w-2 shrink-0 rounded-sm ${item.colorClass}`} />
@@ -36,7 +41,7 @@ export function SessionsOverview() {
           </div>
         </div>
 
-        {sessionsOverviewMetrics.map((metric) => (
+        {metrics.map((metric) => (
           <MetricCard key={metric.label} metric={metric} />
         ))}
       </div>
@@ -44,7 +49,7 @@ export function SessionsOverview() {
   );
 }
 
-function MetricCard({ metric }: { metric: (typeof sessionsOverviewMetrics)[number] }) {
+function MetricCard({ metric }: { metric: SessionsOverviewMetric }) {
   return (
     <div className="px-5">
       <div className="text-[12px] font-semibold text-slate-950">{metric.label}</div>

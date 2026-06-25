@@ -19,12 +19,35 @@ const eventToneStyles: Record<SessionsListSession["latestEvents"][number]["tone"
 
 type SessionDetailsPanelProps = {
   session: SessionsListSession;
-  actionState: "idle" | "paused" | "stopped";
-  onActionStateChange: (state: "idle" | "paused" | "stopped") => void;
+  isActionPending: boolean;
+  onArchive: (sessionId: string) => void;
   onOpenSession: (sessionId: string) => void;
+  onPause: (sessionId: string) => void;
+  onResume: (sessionId: string) => void;
+  onStart: (sessionId: string) => void;
+  onStop: (sessionId: string) => void;
 };
 
-export function SessionDetailsPanel({ session, actionState, onActionStateChange, onOpenSession }: SessionDetailsPanelProps) {
+export function SessionDetailsPanel({
+  session,
+  isActionPending,
+  onArchive,
+  onOpenSession,
+  onPause,
+  onResume,
+  onStart,
+  onStop,
+}: SessionDetailsPanelProps) {
+  const canStart = session.status === "draft";
+  const canPause = session.status === "running";
+  const canResume = session.status === "paused";
+  const canStop = session.status === "planning" || session.status === "running" || session.status === "paused";
+  const canArchive =
+    session.status === "draft" ||
+    session.status === "completed" ||
+    session.status === "failed" ||
+    session.status === "stopped";
+
   return (
     <aside className="flex w-[300px] shrink-0 flex-col border-l border-slate-200 bg-white">
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-5">
@@ -103,24 +126,27 @@ export function SessionDetailsPanel({ session, actionState, onActionStateChange,
         <div className="grid grid-cols-3 gap-2">
           <button
             type="button"
-            disabled={actionState !== "idle"}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-200 bg-slate-100 text-[13px] font-semibold text-slate-400 disabled:cursor-not-allowed"
+            disabled={!canStart || isActionPending}
+            onClick={() => onStart(session.id)}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white text-[13px] font-semibold text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
           >
             <Play className="h-4 w-4 fill-current" />
             Start
           </button>
           <button
             type="button"
-            onClick={() => onActionStateChange(actionState === "paused" ? "idle" : "paused")}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white text-[13px] font-semibold text-slate-800 hover:bg-slate-50"
+            disabled={(!canPause && !canResume) || isActionPending}
+            onClick={() => (canResume ? onResume(session.id) : onPause(session.id))}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white text-[13px] font-semibold text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
           >
             <Pause className="h-4 w-4 fill-current" />
-            Pause
+            {canResume ? "Resume" : "Pause"}
           </button>
           <button
             type="button"
-            onClick={() => onActionStateChange("stopped")}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-red-200 bg-white text-[13px] font-semibold text-red-600 hover:bg-red-50"
+            disabled={!canStop || isActionPending}
+            onClick={() => onStop(session.id)}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-red-200 bg-white text-[13px] font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
           >
             <Square className="h-3.5 w-3.5 fill-current" />
             Stop
@@ -129,7 +155,9 @@ export function SessionDetailsPanel({ session, actionState, onActionStateChange,
         <div className="mt-2 grid grid-cols-2 gap-2">
           <button
             type="button"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white text-[13px] font-semibold text-slate-700 hover:bg-slate-50"
+            disabled={!canArchive || isActionPending}
+            onClick={() => onArchive(session.id)}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white text-[13px] font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
           >
             <Archive className="h-4 w-4" />
             Archive
