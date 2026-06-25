@@ -6,13 +6,23 @@ import {
   Plus,
   Search,
 } from "lucide-react";
+import { Link } from "react-router-dom";
+
+import { appRoutes } from "@/app/routes";
 
 type SessionsListHeaderProps = {
   globalSearch: string;
+  notificationCount: number;
   onGlobalSearchChange: (value: string) => void;
+  userInitials: string;
 };
 
-export function SessionsListHeader({ globalSearch, onGlobalSearchChange }: SessionsListHeaderProps) {
+export function SessionsListHeader({
+  globalSearch,
+  notificationCount,
+  onGlobalSearchChange,
+  userInitials,
+}: SessionsListHeaderProps) {
   return (
     <header className="shrink-0 border-b border-slate-200 bg-white px-7 py-5">
       <div className="flex items-start justify-between gap-6">
@@ -39,9 +49,11 @@ export function SessionsListHeader({ globalSearch, onGlobalSearchChange }: Sessi
 
           <button type="button" className="relative grid h-10 w-10 place-items-center rounded-full text-slate-600 hover:bg-slate-100">
             <Bell className="h-5 w-5" />
-            <span className="absolute right-1.5 top-1 grid h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
-              7
-            </span>
+            {notificationCount > 0 ? (
+              <span className="absolute right-1.5 top-1 grid h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                {notificationCount}
+              </span>
+            ) : null}
           </button>
           <button type="button" className="grid h-10 w-10 place-items-center rounded-full text-slate-600 hover:bg-slate-100">
             <CircleHelp className="h-5 w-5" />
@@ -50,19 +62,19 @@ export function SessionsListHeader({ globalSearch, onGlobalSearchChange }: Sessi
             type="button"
             className="grid h-10 w-10 place-items-center rounded-full bg-teal-100 text-[13px] font-bold text-teal-800"
           >
-            DA
+            {userInitials}
           </button>
           <button type="button" className="grid h-9 w-9 place-items-center rounded-full text-slate-500 hover:bg-slate-100">
             <ChevronDown className="h-4 w-4" />
           </button>
-          <button
-            type="button"
+          <Link
+            to={appRoutes.projectsNew}
             className="inline-flex h-10 items-center gap-2 rounded-md bg-teal-700 px-4 text-[13px] font-semibold text-white shadow-sm shadow-teal-900/15 hover:bg-teal-800"
           >
             <Plus className="h-4 w-4" />
             New session
             <ChevronDown className="h-4 w-4" />
-          </button>
+          </Link>
         </div>
       </div>
     </header>
