@@ -1,15 +1,93 @@
-import { reportBuilderMock } from "@/mocks/report-builder";
+import type { ApiSessionSummary } from "@/types/api";
+import type { ApiEvidence, ApiFinding } from "@/types/evidence-review";
 import type {
   ApiReport,
+  EvidenceReference,
   ExportAsset,
   ExportHistoryItem,
   FindingStatus,
-  ReportBuilderMock,
+  ReadinessItem,
+  ReportBuilderData,
+  ReportCollaborator,
   ReportConfidence,
   ReportFinding,
+  ReportSection,
   ReportSeverity,
+  ReportStatusOption,
   RiskSummaryItem,
+  ScopeSummary,
 } from "@/types/report-builder";
+
+const reportFindingStatuses = new Set<FindingStatus>(["Confirmed", "Accepted Risk", "Fixed"]);
+
+export const defaultReportStatuses: ReportStatusOption[] = [
+  { id: "Confirmed", label: "Confirmed", included: true },
+  { id: "Accepted Risk", label: "Accepted Risk", included: true },
+  { id: "Fixed", label: "Fixed", included: true },
+  { id: "Candidate", label: "Candidate", included: false },
+  { id: "Needs Review", label: "Needs Review", included: false },
+  { id: "False Positive", label: "False Positive", included: false },
+  { id: "Archived", label: "Archived", included: false },
+];
+
+export const defaultReportSections: ReportSection[] = [
+  {
+    id: "executive-summary",
+    title: "Executive Summary",
+    description: "Overview of key findings and risk posture",
+    enabled: true,
+    metric: "Generated",
+    complete: false,
+  },
+  {
+    id: "scope-methodology",
+    title: "Scope & Methodology",
+    description: "Session objective and assessment scope",
+    enabled: true,
+    metric: "Backend",
+    complete: false,
+  },
+  {
+    id: "findings",
+    title: "Findings",
+    description: "Reviewed findings included in this report",
+    enabled: true,
+    metric: "0 findings",
+    complete: false,
+  },
+  {
+    id: "risk-summary",
+    title: "Risk Summary",
+    description: "Risk distribution from included findings",
+    enabled: true,
+    metric: "0 risks",
+    complete: false,
+  },
+  {
+    id: "evidence-references",
+    title: "Evidence References",
+    description: "Linked evidence and artifacts",
+    enabled: true,
+    metric: "0 items",
+    complete: false,
+  },
+  {
+    id: "remediation",
+    title: "Remediation Recommendations",
+    description: "Actionable next steps",
+    enabled: true,
+    metric: "Generated",
+    complete: false,
+  },
+  {
+    id: "appendix",
+    title: "Appendix",
+    description: "Supporting data and references",
+    enabled: false,
+    metric: "Optional",
+    complete: false,
+  },
+];
 
 function asObject(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
@@ -84,6 +162,18 @@ function formatDate(value: string): string {
   });
 }
 
+function findingsFromApi(findings: ApiFinding[]): ReportFinding[] {
+  return findings.map((finding) => ({
+    id: finding.id,
+    title: finding.title,
+    severity: severity(finding.severity),
+    confidence: confidence(finding.confidence),
+    status: findingStatus(finding.status),
+    evidenceCount: finding.evidence_ids.length,
+    section: "Findings",
+  }));
+}
+
 function findingsFromContent(report: ApiReport): ReportFinding[] {
   const findings = asArray(report.content.findings);
 
@@ -103,7 +193,7 @@ function findingsFromContent(report: ApiReport): ReportFinding[] {
   });
 }
 
-function riskSummary(findings: ReportFinding[]): RiskSummaryItem[] {
+export function riskSummary(findings: ReportFinding[]): RiskSummaryItem[] {
   const total = Math.max(findings.length, 1);
   const severities: ReportSeverity[] = ["High", "Medium", "Low", "Info"];
 
@@ -118,8 +208,29 @@ function riskSummary(findings: ReportFinding[]): RiskSummaryItem[] {
   });
 }
 
-function exportAssets(report: ApiReport): ExportAsset[] {
-  if (!report.asset_id) {
+function evidenceReferences(evidence: ApiEvidence[], report: ApiReport | null): EvidenceReference[] {
+  const renderedEvidence = asArray(report?.content.findings).flatMap((item) => asArray(asObject(item).evidence));
+  const renderedReferences = renderedEvidence.map((item, index) => {
+    const evidenceItem = asObject(item);
+
+    return {
+      id: asString(evidenceItem.id, `evidence-${index + 1}`),
+      label: asString(evidenceItem.title, asString(evidenceItem.summary, "Rendered evidence")),
+    };
+  });
+
+  if (renderedReferences.length > 0) {
+    return renderedReferences;
+  }
+
+  return evidence.map((item) => ({
+    id: item.id,
+    label: item.title || item.summary,
+  }));
+}
+
+function exportAssets(report: ApiReport | null): ExportAsset[] {
+  if (!report?.asset_id) {
     return [];
   }
 
@@ -133,8 +244,8 @@ function exportAssets(report: ApiReport): ExportAsset[] {
   ];
 }
 
-function exportHistory(report: ApiReport): ExportHistoryItem[] {
-  if (!report.asset_id) {
+function exportHistory(report: ApiReport | null): ExportHistoryItem[] {
+  if (!report?.asset_id) {
     return [];
   }
 
@@ -153,19 +264,89 @@ function exportHistory(report: ApiReport): ExportHistoryItem[] {
   ];
 }
 
-export function mapReportBuilderData(report: ApiReport): ReportBuilderMock {
-  const contentSession = asObject(report.content.session);
-  const findings = findingsFromContent(report);
+function scopeSummary(session: ApiSessionSummary | null, report: ApiReport | null): ScopeSummary {
+  const contentSession = asObject(report?.content.session);
 
   return {
-    ...reportBuilderMock,
-    title: report.title,
-    status: reportStatus(report.status),
-    sessionName: asString(contentSession.title, `Session ${report.session_id.slice(0, 8)}`),
-    findings: findings.length > 0 ? findings : reportBuilderMock.findings,
-    riskSummary: findings.length > 0 ? riskSummary(findings) : reportBuilderMock.riskSummary,
-    evidence: reportBuilderMock.evidence,
+    project: session?.project_id ? `Project ${session.project_id.slice(0, 8)}` : "No project selected",
+    session: session?.title ?? asString(contentSession.title, "No session selected"),
+    scope: session?.scope_id ? `Scope ${session.scope_id.slice(0, 8)}` : "No scope selected",
+    assetTypes: "Backend evidence and findings",
+    testWindow: report ? `Updated ${formatDate(report.updated_at)}` : "No report created",
+  };
+}
+
+function sectionsWithMetrics(sections: ReportSection[], findings: ReportFinding[], evidence: EvidenceReference[], report: ApiReport | null): ReportSection[] {
+  const includedFindings = findings.filter((finding) => reportFindingStatuses.has(finding.status));
+  const rendered = report?.status === "rendered" || report?.status === "final";
+
+  return sections.map((section) => {
+    if (section.id === "findings") {
+      return { ...section, metric: `${includedFindings.length} findings`, complete: includedFindings.length > 0 };
+    }
+    if (section.id === "risk-summary") {
+      return { ...section, metric: `${includedFindings.length} risks`, complete: includedFindings.length > 0 };
+    }
+    if (section.id === "evidence-references") {
+      return { ...section, metric: `${evidence.length} items`, complete: evidence.length > 0 };
+    }
+    return { ...section, complete: section.id === "appendix" ? section.complete : rendered };
+  });
+}
+
+function readiness(report: ApiReport | null, findings: ReportFinding[], evidence: EvidenceReference[]): ReadinessItem[] {
+  const includedFindings = findings.filter((finding) => reportFindingStatuses.has(finding.status));
+
+  return [
+    { label: "Report record exists", complete: Boolean(report) },
+    { label: "At least one reviewed finding is included", complete: includedFindings.length > 0 },
+    { label: "Included findings have linked evidence", complete: includedFindings.every((finding) => finding.evidenceCount > 0) && includedFindings.length > 0 },
+    { label: "Evidence references are available", complete: evidence.length > 0 },
+    { label: "Report has been rendered", complete: report?.status === "rendered" || report?.status === "final" },
+    { label: "Report metadata complete", complete: Boolean(report?.title) },
+  ];
+}
+
+function collaborators(currentUserEmail?: string | null): ReportCollaborator[] {
+  const name = currentUserEmail ?? "Current user";
+  return [{ id: name, name }];
+}
+
+export function mapReportBuilderData({
+  report,
+  session,
+  findings,
+  evidence,
+  currentUserEmail,
+  sections = defaultReportSections,
+}: {
+  report: ApiReport | null;
+  session: ApiSessionSummary | null;
+  findings: ApiFinding[];
+  evidence: ApiEvidence[];
+  currentUserEmail?: string | null;
+  sections?: ReportSection[];
+}): ReportBuilderData {
+  const reportFindings = findings.length > 0 ? findingsFromApi(findings) : report ? findingsFromContent(report) : [];
+  const references = evidenceReferences(evidence, report);
+  const resolvedSections = sectionsWithMetrics(sections, reportFindings, references, report);
+  const resolvedCollaborators = collaborators(currentUserEmail);
+
+  return {
+    title: report?.title ?? (session ? `${session.title} Report` : "Session Report"),
+    status: report ? reportStatus(report.status) : "Draft",
+    sessionName: session?.title ?? "No session selected",
+    scope: scopeSummary(session, report),
+    authors: resolvedCollaborators,
+    reviewers: resolvedCollaborators,
+    statuses: defaultReportStatuses,
+    sections: resolvedSections,
+    findings: reportFindings,
+    riskSummary: riskSummary(reportFindings.filter((finding) => reportFindingStatuses.has(finding.status))),
+    evidence: references,
     exportAssets: exportAssets(report),
+    readiness: readiness(report, reportFindings, references),
     exportHistory: exportHistory(report),
+    navigation: [],
   };
 }

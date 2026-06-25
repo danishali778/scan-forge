@@ -19,6 +19,9 @@ type ReportSettingsPanelProps = {
   selectedReviewer: string;
   exportMarkdown: boolean;
   exportJson: boolean;
+  canEditReport?: boolean;
+  onTitleChange: (value: string) => void;
+  onTitleBlur: () => void;
   onToggleStatus: (id: ReportStatusOption["id"]) => void;
   onToggleSection: (id: string) => void;
   onAuthorChange: (id: string) => void;
@@ -38,6 +41,9 @@ export function ReportSettingsPanel({
   selectedReviewer,
   exportMarkdown,
   exportJson,
+  canEditReport = false,
+  onTitleChange,
+  onTitleBlur,
   onToggleStatus,
   onToggleSection,
   onAuthorChange,
@@ -52,7 +58,10 @@ export function ReportSettingsPanel({
           <span className="text-sm font-medium text-slate-700">Report title</span>
           <input
             className="mt-2 h-9 w-full rounded-md border border-slate-300 px-3 text-sm text-slate-700 shadow-sm outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
-            defaultValue={title}
+            value={title}
+            disabled={!canEditReport}
+            onChange={(event) => onTitleChange(event.target.value)}
+            onBlur={onTitleBlur}
           />
         </label>
 

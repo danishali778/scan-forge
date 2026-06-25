@@ -112,8 +112,8 @@ export function IncludedFindingsPanel({
           </tbody>
         </table>
         <div className="flex h-10 items-center justify-between border-t border-slate-100 px-4 text-xs text-slate-500">
-          <span>Showing {findings.length} of 3 included findings</span>
-          <span>Candidate, Needs Review, False Positive excluded</span>
+          <span>Showing {findings.length} backend findings</span>
+          <span>Filtered by selected report statuses</span>
         </div>
       </div>
     </Panel>
