@@ -1,14 +1,39 @@
 import { ArrowRight, Check, Circle, X } from 'lucide-react';
 
-import { checklistItems, guardrailSections, rolePermissions } from '../../mocks/new-assessment';
+import type { RolePermissionSummary, SelectOption } from '../../hooks/useNewAssessmentSetup';
+import type { ChecklistItem, GuardrailSection } from '../../types/new-assessment';
 
 interface GuardrailsPanelProps {
+  canSave: boolean;
+  checklistItems: ChecklistItem[];
   errorMessage?: string;
+  guardrailSections: GuardrailSection[];
   isSaving?: boolean;
   onSaveContinue: () => void;
+  onPolicyChange: (policyId: string) => void;
+  onProviderChange: (providerId: string) => void;
+  policyOptions: SelectOption[];
+  providerOptions: SelectOption[];
+  rolePermissions: RolePermissionSummary[];
+  selectedPolicyId: string | null;
+  selectedProviderId: string | null;
 }
 
-export function GuardrailsPanel({ errorMessage, isSaving = false, onSaveContinue }: GuardrailsPanelProps) {
+export function GuardrailsPanel({
+  canSave,
+  checklistItems,
+  errorMessage,
+  guardrailSections,
+  isSaving = false,
+  onPolicyChange,
+  onProviderChange,
+  onSaveContinue,
+  policyOptions,
+  providerOptions,
+  rolePermissions,
+  selectedPolicyId,
+  selectedProviderId,
+}: GuardrailsPanelProps) {
   return (
     <aside className="rounded-md border border-slate-200 bg-white shadow-sm">
       {guardrailSections.map((section) => (
@@ -36,6 +61,47 @@ export function GuardrailsPanel({ errorMessage, isSaving = false, onSaveContinue
           </dl>
         </section>
       ))}
+
+      <section className="border-b border-slate-200 p-5">
+        <h2 className="text-[16px] font-semibold text-slate-950">Session defaults</h2>
+        <label className="mt-4 block">
+          <span className="text-[13px] font-semibold text-slate-800">Provider profile</span>
+          <select
+            value={selectedProviderId ?? ''}
+            onChange={(event) => onProviderChange(event.target.value)}
+            className="mt-2 h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-[13px] text-slate-800 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+          >
+            <option value="">Select provider profile</option>
+            {providerOptions.map((provider) => (
+              <option key={provider.id} value={provider.id}>
+                {provider.label}
+              </option>
+            ))}
+          </select>
+          <span className="mt-1 block truncate text-[11px] text-slate-500">
+            {providerOptions.find((provider) => provider.id === selectedProviderId)?.helper ?? 'Provider is required for model-backed agent work.'}
+          </span>
+        </label>
+
+        <label className="mt-4 block">
+          <span className="text-[13px] font-semibold text-slate-800">Policy</span>
+          <select
+            value={selectedPolicyId ?? ''}
+            onChange={(event) => onPolicyChange(event.target.value)}
+            className="mt-2 h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-[13px] text-slate-800 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+          >
+            <option value="">Select policy</option>
+            {policyOptions.map((policy) => (
+              <option key={policy.id} value={policy.id}>
+                {policy.label}
+              </option>
+            ))}
+          </select>
+          <span className="mt-1 block truncate text-[11px] text-slate-500">
+            {policyOptions.find((policy) => policy.id === selectedPolicyId)?.helper ?? 'Policy controls approval and runtime guardrails.'}
+          </span>
+        </label>
+      </section>
 
       <section className="border-b border-slate-200 p-5">
         <h2 className="text-[16px] font-semibold text-slate-950">Role permissions (this project)</h2>
@@ -85,7 +151,7 @@ export function GuardrailsPanel({ errorMessage, isSaving = false, onSaveContinue
           type="button"
           className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-md bg-teal-700 text-[15px] font-semibold text-white shadow-sm hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-400"
           onClick={onSaveContinue}
-          disabled={isSaving}
+          disabled={isSaving || !canSave}
         >
           {isSaving ? "Creating session..." : "Save and continue"}
           <ArrowRight className="h-4 w-4" />

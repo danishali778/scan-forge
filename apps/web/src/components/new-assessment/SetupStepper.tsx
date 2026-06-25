@@ -1,14 +1,14 @@
 import { Check, Info, Minus } from 'lucide-react';
 
-import { setupSteps } from '../../mocks/new-assessment';
+import type { SetupStep } from '../../types/new-assessment';
 
-export function SetupStepper() {
+export function SetupStepper({ steps }: { steps: SetupStep[] }) {
   return (
-    <section className="flex min-h-[858px] flex-col rounded-md border border-slate-200 bg-white p-3">
+    <section className="flex min-h-full flex-col rounded-md border border-slate-200 bg-white p-3">
       <div className="relative px-2 pt-8">
         <div className="absolute left-[33px] top-10 h-[492px] w-px bg-slate-300" />
         <div className="space-y-7">
-          {setupSteps.map((step) => {
+          {steps.map((step) => {
             const isActive = step.state === 'active';
             const isCompleted = step.state === 'completed';
 

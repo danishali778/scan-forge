@@ -15,22 +15,24 @@ export interface AssessmentDetailsInput {
   reference: string;
   description: string;
   targets: Target[];
+  policyId?: string | null;
+  providerProfileId?: string | null;
 }
 
 function targetTypeToApi(value: Target): ApiTargetType {
-  if (value.type === "CIDR") {
-    return "cidr";
+  switch (value.type) {
+    case "CIDR":
+      return "cidr";
+    case "IP":
+    case "IP / Port":
+      return "ip";
+    case "API":
+      return "api";
+    case "Cloud account":
+      return "cloud_account";
+    default:
+      return value.value.startsWith("http://") || value.value.startsWith("https://") ? "url" : "domain";
   }
-
-  if (value.type === "IP / Port") {
-    return "ip";
-  }
-
-  if (value.value.startsWith("http://") || value.value.startsWith("https://")) {
-    return "url";
-  }
-
-  return "domain";
 }
 
 export function useCreateAssessmentFlow() {
@@ -51,13 +53,14 @@ export function useCreateAssessmentFlow() {
         },
       });
 
-      const excludedTargets = input.targets.filter((target) => target.status === "Excluded");
+      const filledTargets = input.targets.filter((target) => target.value.trim().length > 0);
+      const excludedTargets = filledTargets.filter((target) => target.status === "Excluded");
       const scope = await createScope(project.id, {
         name: "Authorized assessment scope",
         description: "Approved scope generated from the new assessment setup.",
         rules: {
           assessment_reference: input.reference,
-          excluded_assets: excludedTargets.map((target) => target.value),
+          excluded_assets: excludedTargets.map((target) => target.value.trim()),
           guardrails: {
             scope_type: "authorized_assessment",
             data_handling: "no_production_data",
@@ -66,14 +69,14 @@ export function useCreateAssessmentFlow() {
         },
       });
 
-      const inScopeTargets = input.targets.filter((target) => target.status === "In scope");
+      const inScopeTargets = filledTargets.filter((target) => target.status === "In scope");
 
       await Promise.all(
         inScopeTargets.map((target) =>
           createTarget(project.id, {
             type: targetTypeToApi(target),
-            value: target.value,
-            label: target.notes || target.value,
+            value: target.value.trim(),
+            label: target.notes || target.value.trim(),
             metadata: {
               owner: target.owner,
               source: "new_assessment_setup",
@@ -82,8 +85,14 @@ export function useCreateAssessmentFlow() {
         ),
       );
 
-      const providerProfile = providerProfiles.find((profile) => profile.status === "active") ?? providerProfiles[0];
-      const policy = policies.find((item) => item.status === "active") ?? policies[0];
+      const providerProfile =
+        providerProfiles.find((profile) => profile.id === input.providerProfileId) ??
+        providerProfiles.find((profile) => profile.status === "active") ??
+        providerProfiles[0];
+      const policy =
+        policies.find((item) => item.id === input.policyId) ??
+        policies.find((item) => item.status === "active") ??
+        policies[0];
 
       return createSession({
         project_id: project.id,

@@ -3,7 +3,7 @@ import type { LucideProps } from 'lucide-react';
 
 export type SetupStepStatus = 'completed' | 'active' | 'pending';
 
-export type TargetType = 'Domain' | 'IP / Port' | 'CIDR';
+export type TargetType = 'Domain' | 'Domain / URL' | 'IP' | 'IP / Port' | 'CIDR' | 'API' | 'Cloud account';
 
 export type TargetStatus = 'In scope' | 'Excluded';
 
@@ -36,6 +36,7 @@ export interface RecentDraft {
   updatedAt: string;
   targets: number;
   status: string;
+  sessionId?: string;
 }
 
 export interface ReadinessItem {

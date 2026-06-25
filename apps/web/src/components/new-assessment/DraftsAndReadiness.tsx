@@ -1,8 +1,15 @@
 import { ArrowRight, Check, Circle, Minus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-import { readinessItems, recentDrafts } from '../../mocks/new-assessment';
+import { appRoutes } from '../../app/routes';
+import type { ReadinessItem, RecentDraft } from '../../types/new-assessment';
 
-export function DraftsAndReadiness() {
+interface DraftsAndReadinessProps {
+  readinessItems: ReadinessItem[];
+  recentDrafts: RecentDraft[];
+}
+
+export function DraftsAndReadiness({ readinessItems, recentDrafts }: DraftsAndReadinessProps) {
   return (
     <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_390px]">
       <section className="rounded-md border border-slate-200 bg-white p-6 shadow-sm">
@@ -31,17 +38,30 @@ export function DraftsAndReadiness() {
                     </span>
                   </td>
                   <td className="py-4">
-                    <button className="font-medium text-teal-700">Resume</button>
+                    {draft.sessionId ? (
+                      <Link to={appRoutes.session(draft.sessionId)} className="font-medium text-teal-700">
+                        Resume
+                      </Link>
+                    ) : (
+                      <span className="font-medium text-slate-400">No session</span>
+                    )}
                   </td>
                 </tr>
               ))}
+              {recentDrafts.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-slate-500">
+                    No backend projects yet. Create the first assessment to populate this list.
+                  </td>
+                </tr>
+              ) : null}
             </tbody>
           </table>
         </div>
-        <button className="mt-6 inline-flex items-center gap-2 text-[14px] font-medium text-teal-700">
+        <Link to={appRoutes.sessions} className="mt-6 inline-flex items-center gap-2 text-[14px] font-medium text-teal-700">
           View all drafts
           <ArrowRight className="h-4 w-4" />
-        </button>
+        </Link>
       </section>
 
       <section className="rounded-md border border-slate-200 bg-white p-6 shadow-sm">
