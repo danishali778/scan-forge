@@ -105,6 +105,7 @@ export function mapMemoryDocument(document: ApiMemoryDocument): MemoryRecord {
     reviewedBy: document.reviewed_by,
     updatedAt: formatDate(document.updated_at),
     summary: document.summary,
+    content: document.content,
     contentPreview: contentPreview(document.content),
     sourceLabel: mappedSource,
     sourceContext: document.source_finding_id

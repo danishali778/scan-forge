@@ -1,15 +1,30 @@
 import { Plus, Search } from "lucide-react";
 
-import { memoryFilterOptions } from "@/mocks/memory-library";
 import type { MemoryFilterState } from "@/types/memory-library";
 
 interface MemoryToolbarProps {
   filters: MemoryFilterState;
+  projectOptions: string[];
+  sessionOptions: string[];
   onFiltersChange: (filters: MemoryFilterState) => void;
   onCreateMemory: () => void;
+  isCreating?: boolean;
 }
 
-export function MemoryToolbar({ filters, onFiltersChange, onCreateMemory }: MemoryToolbarProps) {
+const memoryFilterOptions = {
+  visibility: ["All", "Session", "Project", "Workspace"] as const,
+  source: ["All", "Agent", "Finding", "Evidence", "Manual", "Report"] as const,
+  status: ["Open", "All", "Candidate", "Approved", "Rejected", "Archived", "Blocked"] as const,
+};
+
+export function MemoryToolbar({
+  filters,
+  projectOptions,
+  sessionOptions,
+  onFiltersChange,
+  onCreateMemory,
+  isCreating = false,
+}: MemoryToolbarProps) {
   return (
     <section className="shrink-0 border-b border-slate-200 bg-white px-8 py-6">
       <div className="flex items-center gap-3">
@@ -55,14 +70,14 @@ export function MemoryToolbar({ filters, onFiltersChange, onCreateMemory }: Memo
         <FilterSelect
           label="Project"
           value={filters.project}
-          options={memoryFilterOptions.projects}
+          options={projectOptions}
           onChange={(value) => onFiltersChange({ ...filters, project: value })}
           className="w-[210px]"
         />
         <FilterSelect
           label="Session"
           value={filters.session}
-          options={memoryFilterOptions.sessions}
+          options={sessionOptions}
           onChange={(value) => onFiltersChange({ ...filters, session: value })}
           className="w-[210px]"
         />
@@ -70,10 +85,11 @@ export function MemoryToolbar({ filters, onFiltersChange, onCreateMemory }: Memo
         <button
           type="button"
           onClick={onCreateMemory}
-          className="ml-auto inline-flex h-12 items-center gap-2 rounded-md bg-teal-700 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800"
+          disabled={isCreating}
+          className="ml-auto inline-flex h-12 items-center gap-2 rounded-md bg-teal-700 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-300"
         >
           <Plus className="h-5 w-5" />
-          New memory
+          {isCreating ? "Creating..." : "New memory"}
         </button>
       </div>
     </section>

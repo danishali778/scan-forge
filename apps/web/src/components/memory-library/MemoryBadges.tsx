@@ -1,14 +1,15 @@
 import {
   AlertTriangle,
   Archive,
+  Bot,
   CheckCircle2,
   CircleOff,
   Clock3,
+  FileText,
   PackageCheck,
   ShieldAlert,
 } from "lucide-react";
 
-import { sourceIcons } from "@/mocks/memory-library";
 import type {
   EmbeddingStatus,
   MemorySource,
@@ -37,6 +38,14 @@ const sourceStyles: Record<MemorySource, string> = {
   Evidence: "text-blue-700",
   Manual: "text-slate-700",
   Report: "text-green-700",
+};
+
+const sourceIcons = {
+  Agent: Bot,
+  Finding: ShieldAlert,
+  Evidence: FileText,
+  Manual: Archive,
+  Report: CheckCircle2,
 };
 
 const scanStyles: Record<SecretScanStatus, string> = {

@@ -1,7 +1,7 @@
+import { AppSidebar } from "@/components/layout/AppSidebar";
 import { ProviderHealthCards } from "@/components/provider-policies/ProviderHealthCards";
 import { ProviderInspector } from "@/components/provider-policies/ProviderInspector";
 import { ProviderPoliciesHeader } from "@/components/provider-policies/ProviderPoliciesHeader";
-import { ProviderPoliciesSidebar } from "@/components/provider-policies/ProviderPoliciesSidebar";
 import { PolicyProfilesTable, ProviderProfilesTable } from "@/components/provider-policies/ProviderTables";
 import type { PolicyProfileRow, ProviderHealthMetric, ProviderProfileRow } from "@/types/provider-policies";
 
@@ -23,7 +23,7 @@ export function ProviderPoliciesScreen({
   return (
     <div className="h-screen overflow-hidden bg-[#f8faf9] text-slate-900">
       <div className="flex h-full min-w-[1440px]">
-        <ProviderPoliciesSidebar />
+        <AppSidebar />
         <div className="flex min-w-0 flex-1 flex-col">
           <ProviderPoliciesHeader />
           <div className="flex min-h-0 flex-1">
