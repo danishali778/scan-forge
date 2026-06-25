@@ -20,14 +20,14 @@ function severityLabel(severity: Severity) {
   return severity.charAt(0).toUpperCase() + severity.slice(1);
 }
 
-export function AttentionQueuePanel({ groups }: { groups: AttentionGroup[] }) {
+export function AttentionQueuePanel({ groups, className = "" }: { groups: AttentionGroup[]; className?: string }) {
   return (
-    <section className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+    <section className={`flex min-h-0 flex-col overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm ${className}`}>
       <div className="flex h-12 items-center justify-between border-b border-slate-200 px-4">
         <h2 className="text-[15px] font-semibold text-slate-950">Attention queue</h2>
       </div>
 
-      <div className="divide-y divide-slate-200">
+      <div className="min-h-0 flex-1 divide-y divide-slate-200 overflow-y-auto">
         {groups.map((group) => (
           <div key={group.title} className="px-4 py-3">
             <div className="mb-2 flex items-center justify-between gap-3">

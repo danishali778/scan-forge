@@ -1,50 +1,62 @@
-import { MoreHorizontal, Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import { targets as mockTargets } from '../../mocks/new-assessment';
-import type { Target, TargetType } from '../../types/new-assessment';
+import type { Target, TargetStatus, TargetType } from '../../types/new-assessment';
 
 const targetTabs = ['All', 'Domain / URL', 'IP', 'CIDR', 'API', 'Cloud account'] as const;
+const targetTypes: TargetType[] = ['Domain / URL', 'IP / Port', 'CIDR', 'API', 'Cloud account'];
+const targetStatuses: TargetStatus[] = ['In scope', 'Excluded'];
 
 function typeTone(type: TargetType) {
   if (type === 'CIDR') {
     return 'border-purple-300 bg-purple-50 text-purple-700';
   }
 
-  if (type === 'IP / Port') {
+  if (type === 'IP' || type === 'IP / Port') {
     return 'border-blue-300 bg-blue-50 text-blue-700';
+  }
+
+  if (type === 'API') {
+    return 'border-cyan-300 bg-cyan-50 text-cyan-700';
+  }
+
+  if (type === 'Cloud account') {
+    return 'border-amber-300 bg-amber-50 text-amber-800';
   }
 
   return 'border-teal-300 bg-teal-50 text-teal-700';
 }
 
 interface TargetsPanelProps {
-  targets?: Target[];
+  targets: Target[];
+  onAddTarget: () => void;
+  onRemoveTarget: (targetId: string) => void;
+  onUpdateTarget: (targetId: string, patch: Partial<Target>) => void;
 }
 
-export function TargetsPanel({ targets = mockTargets }: TargetsPanelProps) {
+function matchesTab(target: Target, activeTab: (typeof targetTabs)[number]) {
+  if (activeTab === 'All') {
+    return true;
+  }
+
+  if (activeTab === 'Domain / URL') {
+    return target.type === 'Domain' || target.type === 'Domain / URL';
+  }
+
+  if (activeTab === 'IP') {
+    return target.type === 'IP' || target.type === 'IP / Port';
+  }
+
+  return target.type === activeTab;
+}
+
+export function TargetsPanel({ targets, onAddTarget, onRemoveTarget, onUpdateTarget }: TargetsPanelProps) {
   const [activeTab, setActiveTab] = useState<(typeof targetTabs)[number]>('All');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const visibleTargets = useMemo(() => {
-    if (activeTab === 'All') {
-      return targets;
-    }
-
-    if (activeTab === 'Domain / URL') {
-      return targets.filter((target) => target.type === 'Domain');
-    }
-
-    if (activeTab === 'IP') {
-      return targets.filter((target) => target.type === 'IP / Port');
-    }
-
-    if (activeTab === 'CIDR') {
-      return targets.filter((target) => target.type === 'CIDR');
-    }
-
-    return [];
-  }, [activeTab]);
+    return targets.filter((target) => matchesTab(target, activeTab));
+  }, [activeTab, targets]);
 
   const toggleTarget = (id: string) => {
     setSelectedIds((current) =>
@@ -59,7 +71,11 @@ export function TargetsPanel({ targets = mockTargets }: TargetsPanelProps) {
           <h2 className="text-[18px] font-semibold text-slate-950">Targets</h2>
           <p className="mt-1 text-[13px] text-slate-500">Define in-scope targets for this assessment.</p>
         </div>
-        <button className="flex h-10 items-center gap-2 rounded-md border border-teal-700 bg-white px-4 text-[14px] font-medium text-teal-700 shadow-sm">
+        <button
+          type="button"
+          onClick={onAddTarget}
+          className="flex h-10 items-center gap-2 rounded-md border border-teal-700 bg-white px-4 text-[14px] font-medium text-teal-700 shadow-sm"
+        >
           <Plus className="h-4 w-4" />
           Add target
         </button>
@@ -113,37 +129,78 @@ export function TargetsPanel({ targets = mockTargets }: TargetsPanelProps) {
                     aria-label={`Select ${target.value}`}
                   />
                 </td>
-                <td className="px-2 py-3 font-medium text-blue-600">{target.value}</td>
                 <td className="px-2 py-3">
-                  <span className={['rounded border px-2 py-0.5 text-[12px] font-medium', typeTone(target.type)].join(' ')}>
-                    {target.type}
-                  </span>
+                  <input
+                    value={target.value}
+                    onChange={(event) => onUpdateTarget(target.id, { value: event.target.value })}
+                    placeholder="staging.example.com"
+                    className="h-8 w-full rounded border border-transparent bg-transparent px-2 font-medium text-blue-600 outline-none focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-100"
+                  />
                 </td>
                 <td className="px-2 py-3">
-                  <span
+                  <select
+                    value={target.type}
+                    onChange={(event) => onUpdateTarget(target.id, { type: event.target.value as TargetType })}
+                    className={['h-8 rounded border px-2 text-[12px] font-medium outline-none', typeTone(target.type)].join(' ')}
+                  >
+                    {targetTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td className="px-2 py-3">
+                  <select
+                    value={target.status}
+                    onChange={(event) => onUpdateTarget(target.id, { status: event.target.value as TargetStatus })}
                     className={[
-                      'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[12px] font-medium',
+                      'h-8 rounded-md px-2 text-[12px] font-medium outline-none',
                       target.status === 'Excluded' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700',
                     ].join(' ')}
                   >
-                    <span
-                      className={[
-                        'h-1.5 w-1.5 rounded-full',
-                        target.status === 'Excluded' ? 'bg-red-500' : 'bg-emerald-600',
-                      ].join(' ')}
-                    />
-                    {target.status}
-                  </span>
+                    {targetStatuses.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
                 </td>
-                <td className="px-2 py-3 text-slate-700">{target.owner}</td>
-                <td className="px-2 py-3 text-slate-700">{target.notes}</td>
+                <td className="px-2 py-3">
+                  <input
+                    value={target.owner}
+                    onChange={(event) => onUpdateTarget(target.id, { owner: event.target.value })}
+                    placeholder="Owner"
+                    className="h-8 w-full rounded border border-transparent bg-transparent px-2 text-slate-700 outline-none focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-100"
+                  />
+                </td>
+                <td className="px-2 py-3">
+                  <input
+                    value={target.notes}
+                    onChange={(event) => onUpdateTarget(target.id, { notes: event.target.value })}
+                    placeholder="Notes"
+                    className="h-8 w-full rounded border border-transparent bg-transparent px-2 text-slate-700 outline-none focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-100"
+                  />
+                </td>
                 <td className="px-4 py-3 text-right">
-                  <button className="rounded p-1 text-slate-500 hover:bg-slate-100">
-                    <MoreHorizontal className="h-5 w-5" />
+                  <button
+                    type="button"
+                    onClick={() => onRemoveTarget(target.id)}
+                    className="rounded p-1 text-slate-500 hover:bg-red-50 hover:text-red-700"
+                    aria-label={`Remove ${target.value || 'target'}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
                   </button>
                 </td>
               </tr>
             ))}
+            {visibleTargets.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-10 text-center text-slate-500">
+                  No targets in this filter yet. Add a target to define the assessment perimeter.
+                </td>
+              </tr>
+            ) : null}
           </tbody>
         </table>
       </div>
