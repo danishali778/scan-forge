@@ -66,8 +66,24 @@ function confidence(value: string): Confidence {
 }
 
 function findingStatus(value: string): FindingStatus {
-  if (["confirmed", "accepted_risk", "fixed"].includes(value)) {
-    return "Approved";
+  if (value === "confirmed") {
+    return "Confirmed";
+  }
+
+  if (value === "false_positive") {
+    return "False positive";
+  }
+
+  if (value === "accepted_risk") {
+    return "Accepted risk";
+  }
+
+  if (value === "fixed") {
+    return "Fixed";
+  }
+
+  if (value === "archived") {
+    return "Archived";
   }
 
   if (value === "needs_review") {

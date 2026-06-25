@@ -1,11 +1,8 @@
 import {
   ArrowUp,
-  BarChart3,
   CalendarDays,
   Check,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   ClipboardList,
   Copy,
   Database,
@@ -14,7 +11,6 @@ import {
   FileText,
   FileUp,
   Flag,
-  Hexagon,
   MoreVertical,
   PanelRightOpen,
   Plus,
@@ -23,34 +19,23 @@ import {
   Target,
   X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { Link, useLocation } from "react-router-dom";
 
-import { getNavPath, isNavPathActive } from "@/app/routes";
-import {
-  candidateFindings as mockCandidateFindings,
-  dateRangeOptions,
-  defaultEvidenceFilters,
-  evidenceItems as mockEvidenceItems,
-  evidenceMetrics,
-  evidenceNavItems,
-  evidenceTypeOptions,
-  reviewerOptions,
-  sessionOptions,
-  severityOptions,
-  statusOptions,
-} from "@/mocks/evidence-review";
+import { AppSidebar } from "@/components/layout/AppSidebar";
 import type {
   CandidateFinding,
   Confidence,
   EvidenceFiltersState,
   EvidenceItem,
+  EvidenceMetric,
   EvidenceSelectOption,
   EvidenceStatus,
   EvidenceTone,
   EvidenceType,
   FindingStatus,
+  FindingReviewRequest,
+  FindingUpdateRequest,
   Severity,
 } from "@/types/evidence-review";
 
@@ -84,6 +69,105 @@ const evidenceTypeClasses: Record<EvidenceType, string> = {
   database: "border-cyan-200 bg-cyan-50 text-cyan-700",
   note: "border-purple-200 bg-purple-50 text-purple-700",
 };
+const emptyEvidenceFilters: EvidenceFiltersState = {
+  session: "",
+  evidenceType: "all",
+  status: "all",
+  severity: "all",
+  reviewer: "all",
+  dateRange: "all",
+};
+const evidenceTypeOptions: EvidenceSelectOption[] = [
+  { label: "All types", value: "all" },
+  { label: "Terminal", value: "terminal" },
+  { label: "File", value: "file" },
+  { label: "Database", value: "database" },
+  { label: "Note", value: "note" },
+];
+const statusOptions: EvidenceSelectOption[] = [
+  { label: "All statuses", value: "all" },
+  { label: "Reviewed", value: "reviewed" },
+  { label: "Candidate", value: "candidate" },
+  { label: "Confirmed", value: "confirmed" },
+];
+const severityOptions: EvidenceSelectOption[] = [
+  { label: "All severities", value: "all" },
+  { label: "Critical", value: "Critical" },
+  { label: "High", value: "High" },
+  { label: "Medium", value: "Medium" },
+  { label: "Low", value: "Low" },
+];
+const dateRangeOptions: EvidenceSelectOption[] = [
+  { label: "All returned evidence", value: "all" },
+];
+const reviewableStatusLabels: FindingStatus[] = ["Confirmed", "False positive", "Accepted risk", "Fixed", "Archived"];
+
+function buildEvidenceMetrics(items: EvidenceItem[], findings: CandidateFinding[]): EvidenceMetric[] {
+  const linkedEvidenceCount = items.filter((item) => item.linkedFinding).length;
+  const confirmedFindingCount = findings.filter((finding) => finding.status === "Confirmed").length;
+  const candidateFindingCount = findings.filter((finding) => finding.status === "Needs review" || finding.status === "Ready for review").length;
+  const assetCount = items.filter((item) => item.fileAsset && item.fileAsset !== "Inline content").length;
+
+  return [
+    {
+      label: "Evidence items",
+      value: String(items.length),
+      helper: "Returned by backend",
+      tone: "blue",
+      icon: FileText,
+    },
+    {
+      label: "Linked findings",
+      value: String(linkedEvidenceCount),
+      helper: `${findings.length} findings`,
+      tone: "teal",
+      icon: Flag,
+    },
+    {
+      label: "Confirmed findings",
+      value: String(confirmedFindingCount),
+      helper: "Reviewed backend findings",
+      tone: "green",
+      icon: Check,
+    },
+    {
+      label: "Candidate findings",
+      value: String(candidateFindingCount),
+      helper: "Awaiting review",
+      tone: "amber",
+      icon: ClipboardList,
+    },
+    {
+      label: "File assets",
+      value: String(assetCount),
+      helper: "Stored artifacts",
+      tone: "slate",
+      icon: Database,
+    },
+  ];
+}
+
+function backendFindingStatus(status: FindingStatus): string {
+  if (status === "Confirmed") return "confirmed";
+  if (status === "False positive") return "false_positive";
+  if (status === "Accepted risk") return "accepted_risk";
+  if (status === "Fixed") return "fixed";
+  if (status === "Archived") return "archived";
+  if (status === "Needs review") return "needs_review";
+  return "candidate";
+}
+
+function backendReviewStatus(status: FindingStatus): string | null {
+  return reviewableStatusLabels.includes(status) ? backendFindingStatus(status) : null;
+}
+
+function backendSeverity(value: Severity): string {
+  return value.toLowerCase();
+}
+
+function backendConfidence(value: Confidence): string {
+  return value.toLowerCase();
+}
 
 function humanizeStatus(status: EvidenceStatus) {
   return status === "reviewed" ? "Reviewed" : status === "candidate" ? "Candidate" : "Confirmed";
@@ -97,120 +181,35 @@ function StatusBadge({ status }: { status: EvidenceStatus }) {
   );
 }
 
-function Sidebar() {
-  const location = useLocation();
-
-  return (
-    <aside className="flex h-screen w-[260px] shrink-0 flex-col bg-[#102233] text-slate-100">
-      <div className="flex h-[74px] items-center gap-3 px-6">
-        <Hexagon className="h-9 w-9 text-teal-400" strokeWidth={2.4} />
-        <span className="text-[20px] font-semibold tracking-tight text-white">ScopeForge</span>
-      </div>
-      <div className="px-5">
-        <button className="flex h-[58px] w-full items-center justify-between rounded-md border border-white/12 bg-white/[0.03] px-4 text-left shadow-sm">
-          <span>
-            <span className="block text-sm font-semibold text-white">Acme Security</span>
-            <span className="mt-0.5 block text-xs text-slate-300">Workspace</span>
-          </span>
-          <ChevronDown className="h-4 w-4 text-slate-300" />
-        </button>
-      </div>
-      <nav className="mt-6 flex-1 space-y-1 px-4">
-        {evidenceNavItems.map((item, index) => {
-          const Icon = item.icon;
-          const path = getNavPath(item.label);
-          const active = path ? isNavPathActive(item.label, location.pathname) : item.active;
-          const className = `flex h-11 w-full items-center justify-between rounded-md px-3 text-left text-sm font-medium transition ${
-            active ? "bg-teal-500/20 text-white" : "text-slate-200 hover:bg-white/5 hover:text-white"
-          }`;
-          const content = (
-            <>
-              <span className="flex min-w-0 items-center gap-3">
-                <Icon className="h-5 w-5 shrink-0 text-slate-300" />
-                <span className="truncate">{item.label}</span>
-              </span>
-              {item.badge ? (
-                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-orange-500 px-1.5 text-xs font-bold text-white">
-                  {item.badge}
-                </span>
-              ) : null}
-            </>
-          );
-
-          return (
-            <div key={item.label} className={index === evidenceNavItems.length - 1 ? "mt-7 border-t border-white/12 pt-6" : undefined}>
-              {path ? (
-                <Link to={path} className={className}>
-                  {content}
-                </Link>
-              ) : (
-                <button type="button" className={className}>
-                  {content}
-                </button>
-              )}
-            </div>
-          );
-        })}
-      </nav>
-      <div className="px-5 pb-5">
-        <div className="mb-5 border-t border-white/12" />
-        <button type="button" className="flex w-full items-center justify-between">
-          <span className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-teal-600 text-sm font-bold text-white">DA</span>
-            <span className="text-left">
-              <span className="block text-sm font-semibold text-white">Danish Ali</span>
-              <span className="block text-xs text-slate-300">Operator</span>
-            </span>
-          </span>
-          <ChevronDown className="h-4 w-4 text-slate-300" />
-        </button>
-      </div>
-    </aside>
-  );
-}
-
-function Header() {
-  const [exportOpen, setExportOpen] = useState(false);
-
+function Header({ sessionLabel }: { sessionLabel: string }) {
   return (
     <header className="relative flex h-[72px] shrink-0 items-center justify-between border-b border-slate-200 bg-white px-8">
       <div className="flex min-w-0 items-center gap-4">
         <div className="flex items-center gap-4 text-[20px] font-semibold tracking-tight">
           <span className="text-slate-950">Evidence</span>
           <span className="font-normal text-slate-300">/</span>
-          <span className="text-slate-950">Acme Staging Review</span>
+          <span className="truncate text-slate-950">{sessionLabel || "No session selected"}</span>
         </div>
         <button type="button" aria-label="Favorite session" className="grid h-9 w-9 place-items-center rounded-md text-slate-500 hover:bg-slate-100">
           <Star className="h-5 w-5" />
         </button>
       </div>
       <div className="flex items-center gap-3">
-        <button type="button" className="inline-flex h-10 items-center gap-2 rounded-md border border-teal-600/40 bg-white px-4 text-sm font-semibold text-teal-700 shadow-sm hover:bg-teal-50">
+        <button type="button" disabled title="Finding creation is handled from evidence detail workflows later." className="inline-flex h-10 cursor-not-allowed items-center gap-2 rounded-md border border-teal-600/40 bg-white px-4 text-sm font-semibold text-teal-700 opacity-60 shadow-sm">
           <FilePlus2 className="h-4 w-4" />
           Create finding
         </button>
-        <button type="button" className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+        <button type="button" disabled title="Manual evidence attachment is not wired in this screen yet." className="inline-flex h-10 cursor-not-allowed items-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 opacity-60 shadow-sm">
           <FileUp className="h-4 w-4" />
           Attach evidence
         </button>
-        <button type="button" className="h-10 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+        <button type="button" disabled title="Use the finding inspector to review linked findings." className="h-10 cursor-not-allowed rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 opacity-60 shadow-sm">
           Mark reviewed
         </button>
-        <div className="relative">
-          <button type="button" className="inline-flex h-10 items-center gap-3 rounded-md bg-teal-700 px-4 text-sm font-semibold text-white shadow-sm hover:bg-teal-800" onClick={() => setExportOpen((open) => !open)}>
-            Export report
-            <ChevronDown className="h-4 w-4" />
-          </button>
-          {exportOpen ? (
-            <div className="absolute right-0 z-20 mt-2 w-44 overflow-hidden rounded-md border border-slate-200 bg-white py-1 text-sm shadow-lg">
-              {["PDF report", "Evidence bundle", "CSV summary"].map((label) => (
-                <button key={label} type="button" className="block w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50" onClick={() => setExportOpen(false)}>
-                  {label}
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
+        <button type="button" disabled title="Report export lives on the Reports page." className="inline-flex h-10 cursor-not-allowed items-center gap-3 rounded-md bg-teal-700 px-4 text-sm font-semibold text-white opacity-60 shadow-sm">
+          Export report
+          <ChevronDown className="h-4 w-4" />
+        </button>
       </div>
     </header>
   );
@@ -223,6 +222,7 @@ function FilterSelect({
   onChange,
   leadingIcon,
   canClear = false,
+  clearValue = "",
 }: {
   label: string;
   value: string;
@@ -230,6 +230,7 @@ function FilterSelect({
   onChange: (value: string) => void;
   leadingIcon?: ReactNode;
   canClear?: boolean;
+  clearValue?: string;
 }) {
   return (
     <label className="relative block min-w-0">
@@ -250,7 +251,7 @@ function FilterSelect({
       </select>
       <ChevronDown className="pointer-events-none absolute bottom-3.5 right-4 h-4 w-4 text-slate-600" />
       {canClear ? (
-        <button type="button" aria-label={`Clear ${label}`} className="absolute bottom-3.5 right-10 grid h-4 w-4 place-items-center rounded text-slate-500 hover:bg-slate-100" onClick={() => onChange(defaultEvidenceFilters.session)}>
+        <button type="button" aria-label={`Clear ${label}`} className="absolute bottom-3.5 right-10 grid h-4 w-4 place-items-center rounded text-slate-500 hover:bg-slate-100" onClick={() => onChange(clearValue)}>
           <X className="h-4 w-4" />
         </button>
       ) : null}
@@ -258,12 +259,26 @@ function FilterSelect({
   );
 }
 
-function Filters({ filters, onChange }: { filters: EvidenceFiltersState; onChange: (filters: EvidenceFiltersState) => void }) {
+function Filters({
+  filters,
+  onChange,
+  sessionOptions,
+  reviewerOptions,
+  defaultFilters,
+}: {
+  filters: EvidenceFiltersState;
+  onChange: (filters: EvidenceFiltersState) => void;
+  sessionOptions: EvidenceSelectOption[];
+  reviewerOptions: EvidenceSelectOption[];
+  defaultFilters: EvidenceFiltersState;
+}) {
   const update = (key: keyof EvidenceFiltersState, value: string) => onChange({ ...filters, [key]: value });
+  const resolvedSessionOptions = sessionOptions.length > 0 ? sessionOptions : [{ label: "No backend sessions", value: "" }];
+
   return (
     <section className="flex items-center gap-4">
       <div className="w-[250px]">
-        <FilterSelect label="Session" value={filters.session} options={sessionOptions} canClear onChange={(value) => update("session", value)} />
+        <FilterSelect label="Session" value={filters.session} options={resolvedSessionOptions} canClear onChange={(value) => update("session", value)} />
       </div>
       <div className="w-[170px]">
         <FilterSelect label="Evidence type" value={filters.evidenceType} options={evidenceTypeOptions} onChange={(value) => update("evidenceType", value)} />
@@ -280,17 +295,17 @@ function Filters({ filters, onChange }: { filters: EvidenceFiltersState; onChang
       <div className="w-[220px]">
         <FilterSelect label="Date range" value={filters.dateRange} options={dateRangeOptions} leadingIcon={<CalendarDays className="h-4 w-4" />} onChange={(value) => update("dateRange", value)} />
       </div>
-      <button type="button" className="ml-auto h-10 px-2 text-sm font-semibold text-teal-700 hover:text-teal-800" onClick={() => onChange(defaultEvidenceFilters)}>
+      <button type="button" className="ml-auto h-10 px-2 text-sm font-semibold text-teal-700 hover:text-teal-800" onClick={() => onChange(defaultFilters)}>
         Reset
       </button>
     </section>
   );
 }
 
-function Metrics() {
+function Metrics({ metrics }: { metrics: EvidenceMetric[] }) {
   return (
     <section className="grid grid-cols-5 gap-4">
-      {evidenceMetrics.map((metric) => {
+      {metrics.map((metric) => {
         const Icon = metric.icon;
         return (
           <article key={metric.label} className="rounded-md border border-slate-200 bg-white p-5 shadow-sm">
@@ -377,14 +392,8 @@ function EvidenceTable({ items, selectedId, onSelect }: { items: EvidenceItem[];
         </tbody>
       </table>
       <div className="flex h-12 items-center justify-between border-t border-slate-200 px-4 text-sm text-slate-600">
-        <span><span className="font-semibold text-slate-700">1</span> of 128 selected</span>
-        <div className="flex items-center gap-2">
-          <button type="button" className="grid h-8 w-8 place-items-center rounded-md text-slate-400 hover:bg-slate-50"><ChevronLeft className="h-4 w-4" /></button>
-          {[1, 2, 3].map((page) => <button key={page} type="button" className={`grid h-8 min-w-8 place-items-center rounded-md px-2 text-sm ${page === 1 ? "border border-teal-500 bg-white font-semibold text-teal-700" : "text-slate-700 hover:bg-slate-50"}`}>{page}</button>)}
-          <span className="px-2 text-slate-500">...</span>
-          <button type="button" className="grid h-8 min-w-8 place-items-center rounded-md px-2 text-sm text-slate-700">13</button>
-          <button type="button" className="grid h-8 w-8 place-items-center rounded-md text-slate-700 hover:bg-slate-50"><ChevronRight className="h-4 w-4" /></button>
-        </div>
+        <span><span className="font-semibold text-slate-700">{items.length}</span> evidence items returned</span>
+        <span className="text-xs font-medium text-slate-500">Backend result set</span>
       </div>
     </section>
   );
@@ -461,13 +470,25 @@ function EvidenceDetail({ evidence }: { evidence: EvidenceItem }) {
   );
 }
 
-function InspectorSelect<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: T[]; onChange: (value: T) => void }) {
+function InspectorSelect<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+  disabled = false,
+}: {
+  label: string;
+  value: T;
+  options: T[];
+  onChange: (value: T) => void;
+  disabled?: boolean;
+}) {
   return (
     <label className="block min-w-0">
       <span className="mb-2 block text-xs font-semibold text-slate-600">{label}</span>
       <span className="relative block">
         <span className="pointer-events-none absolute left-3 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-amber-500" />
-        <select value={value} onChange={(event) => onChange(event.target.value as T)} className="h-10 w-full appearance-none rounded-md border border-slate-300 bg-white pl-7 pr-8 text-sm font-medium text-slate-700 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20">
+        <select value={value} disabled={disabled} onChange={(event) => onChange(event.target.value as T)} className="h-10 w-full appearance-none rounded-md border border-slate-300 bg-white pl-7 pr-8 text-sm font-medium text-slate-700 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500">
           {options.map((option) => <option key={option} value={option}>{option}</option>)}
         </select>
         <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
@@ -480,17 +501,57 @@ function TextAreaField({ label, value, onChange }: { label: string; value: strin
   return <label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">{label}</span><textarea value={value} onChange={(event) => onChange(event.target.value)} className="min-h-[84px] w-full resize-none rounded-md border border-slate-300 bg-white px-3 py-3 text-sm leading-5 text-slate-700 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20" /></label>;
 }
 
-function Inspector({ finding, onClose }: { finding: CandidateFinding; onClose: () => void }) {
+function Inspector({
+  finding,
+  onClose,
+  onSaveFinding,
+  isSaving = false,
+}: {
+  finding: CandidateFinding;
+  onClose: () => void;
+  onSaveFinding: (findingId: string, update: FindingUpdateRequest, review?: FindingReviewRequest) => void;
+  isSaving?: boolean;
+}) {
   const [severity, setSeverity] = useState<Severity>(finding.severity);
   const [confidence, setConfidence] = useState<Confidence>(finding.confidence);
   const [status, setStatus] = useState<FindingStatus>(finding.status);
   const [description, setDescription] = useState(finding.description);
   const [impact, setImpact] = useState(finding.impact);
   const [remediation, setRemediation] = useState(finding.remediation);
-  const [links, setLinks] = useState(finding.evidenceLinks);
+  const links = finding.evidenceLinks;
+
+  useEffect(() => {
+    setSeverity(finding.severity);
+    setConfidence(finding.confidence);
+    setStatus(finding.status);
+    setDescription(finding.description);
+    setImpact(finding.impact);
+    setRemediation(finding.remediation);
+  }, [finding]);
+
+  const saveFinding = () => {
+    const reviewStatus = backendReviewStatus(status);
+    onSaveFinding(
+      finding.id,
+      {
+        severity: backendSeverity(severity),
+        confidence: backendConfidence(confidence),
+        description,
+        impact,
+        remediation,
+        status: backendFindingStatus(status),
+      },
+      reviewStatus
+        ? {
+            status: reviewStatus,
+            review_note: `Reviewed from Evidence page. Status: ${status}.`,
+          }
+        : undefined,
+    );
+  };
 
   return (
-    <aside className="flex w-[390px] shrink-0 flex-col border-l border-slate-200 bg-white">
+    <aside className="flex w-[clamp(320px,28vw,390px)] shrink-0 flex-col border-l border-slate-200 bg-white">
       <div className="flex h-[58px] items-center justify-between border-b border-slate-200 px-4">
         <button type="button" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-800">Candidate Finding<ChevronDown className="h-4 w-4 text-slate-500" /></button>
         <div className="flex items-center gap-1"><button type="button" className="grid h-8 w-8 place-items-center rounded-md text-slate-600 hover:bg-slate-50"><MoreVertical className="h-5 w-5" /></button><button type="button" aria-label="Close finding inspector" className="grid h-8 w-8 place-items-center rounded-md text-slate-600 hover:bg-slate-50" onClick={onClose}><X className="h-5 w-5" /></button></div>
@@ -503,7 +564,7 @@ function Inspector({ finding, onClose }: { finding: CandidateFinding; onClose: (
         <div className="grid grid-cols-3 gap-3">
           <InspectorSelect label="Severity" value={severity} options={["Low", "Medium", "High", "Critical"]} onChange={setSeverity} />
           <InspectorSelect label="Confidence" value={confidence} options={["Low", "Medium", "High"]} onChange={setConfidence} />
-          <InspectorSelect label="Status" value={status} options={["Needs review", "Ready for review", "Approved"]} onChange={setStatus} />
+          <InspectorSelect label="Status" value={status} options={["Needs review", "Ready for review", ...reviewableStatusLabels]} onChange={setStatus} />
         </div>
         <div className="flex items-center gap-2"><span className="inline-flex h-6 items-center rounded-md bg-amber-50 px-2 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-200">{severity}</span><span className="inline-flex h-6 items-center rounded-md bg-amber-50 px-2 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-200">{status}</span></div>
         <TextAreaField label="Description" value={description} onChange={setDescription} />
@@ -512,31 +573,29 @@ function Inspector({ finding, onClose }: { finding: CandidateFinding; onClose: (
         <div>
           <h3 className="mb-2 text-xs font-semibold text-slate-600">Evidence links ({links.length})</h3>
           <div className="space-y-2">
-            {links.map((link) => <div key={link.id} className="flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2"><span className="grid h-5 w-5 place-items-center rounded-sm border border-teal-200 bg-teal-50 text-teal-700"><SquareTerminal className="h-3.5 w-3.5" /></span><span className="min-w-0 flex-1 truncate text-sm text-slate-700">{link.title}</span><button type="button" aria-label={`Remove ${link.title}`} className="grid h-6 w-6 place-items-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700" onClick={() => setLinks((current) => current.filter((item) => item.id !== link.id))}><X className="h-4 w-4" /></button></div>)}
+            {links.map((link) => <div key={link.id} className="flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2"><span className="grid h-5 w-5 place-items-center rounded-sm border border-teal-200 bg-teal-50 text-teal-700"><SquareTerminal className="h-3.5 w-3.5" /></span><span className="min-w-0 flex-1 truncate text-sm text-slate-700">{link.title}</span><button type="button" disabled title="Evidence detach is not wired in this screen yet." aria-label={`Remove ${link.title}`} className="grid h-6 w-6 cursor-not-allowed place-items-center rounded text-slate-300"><X className="h-4 w-4" /></button></div>)}
             {links.length === 0 ? <div className="rounded-md border border-dashed border-slate-300 px-3 py-3 text-sm text-slate-500">No evidence linked.</div> : null}
           </div>
-          <button type="button" className="mt-3 inline-flex h-9 items-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => links.length === 0 && setLinks(finding.evidenceLinks)}><Plus className="h-4 w-4" />Add evidence</button>
+          <button type="button" disabled title="Evidence attachment is not wired in this screen yet." className="mt-3 inline-flex h-9 cursor-not-allowed items-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-500 opacity-70"><Plus className="h-4 w-4" />Add evidence</button>
         </div>
         <div className="space-y-4 border-t border-slate-200 pt-4">
-          <label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Report inclusion</span><span className="relative block"><select defaultValue={finding.reportInclusion} className="h-10 w-full appearance-none rounded-md border border-slate-300 bg-white px-3 pr-8 text-sm text-slate-700 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"><option>Include in report</option><option>Keep internal only</option><option>Exclude from report</option></select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" /></span></label>
+          <label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Report inclusion</span><span className="relative block"><select disabled value={finding.reportInclusion} className="h-10 w-full cursor-not-allowed appearance-none rounded-md border border-slate-300 bg-slate-50 px-3 pr-8 text-sm text-slate-500 outline-none"><option>Include in report</option><option>Keep internal only</option><option>Exclude from report</option></select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" /></span></label>
           <div className="grid grid-cols-2 gap-3">
-            <label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Reviewer</span><span className="relative block"><span className="pointer-events-none absolute left-3 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center rounded-full bg-[#a56d46] text-[9px] font-bold text-white">AK</span><select defaultValue={finding.reviewer.name} className="h-10 w-full appearance-none rounded-md border border-slate-300 bg-white pl-10 pr-8 text-sm text-slate-700 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"><option>Aisha Khan</option><option>Danish Ali</option><option>Yusuf Z.</option></select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" /></span></label>
-            <label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Reviewed at</span><span className="relative block"><CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" /><input placeholder="Select date" className="h-10 w-full rounded-md border border-slate-300 bg-white pl-9 pr-3 text-sm text-slate-700 outline-none placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20" /></span></label>
+            <label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Reviewer</span><span className="relative block"><span className="pointer-events-none absolute left-3 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center rounded-full bg-slate-400 text-[9px] font-bold text-white">{finding.reviewer.initials}</span><input readOnly value={finding.reviewer.name} className="h-10 w-full rounded-md border border-slate-300 bg-slate-50 pl-10 pr-3 text-sm text-slate-500 outline-none" /></span></label>
+            <label className="block"><span className="mb-2 block text-xs font-semibold text-slate-600">Reviewed at</span><span className="relative block"><CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" /><input readOnly value={finding.reviewedAt ?? ""} placeholder="Not reviewed" className="h-10 w-full rounded-md border border-slate-300 bg-slate-50 pl-9 pr-3 text-sm text-slate-500 outline-none placeholder:text-slate-400" /></span></label>
           </div>
         </div>
       </div>
-      <div className="border-t border-slate-200 p-4"><button type="button" className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-teal-700 px-4 text-sm font-semibold text-white hover:bg-teal-800"><Flag className="h-4 w-4" />Save finding review</button></div>
+      <div className="border-t border-slate-200 p-4"><button type="button" disabled={isSaving} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-teal-700 px-4 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60" onClick={saveFinding}><Flag className="h-4 w-4" />{isSaving ? "Saving..." : "Save finding review"}</button></div>
     </aside>
   );
 }
 
 function filterEvidence(filters: EvidenceFiltersState, items: EvidenceItem[], findings: CandidateFinding[]) {
-  const sessionExists = items.some((item) => item.session === filters.session);
-
   return items.filter((item) => {
     const linkedFinding = findings.find((finding) => finding.id === item.linkedFinding);
     return (
-      (!sessionExists || filters.session === item.session) &&
+      (!filters.session || filters.session === item.session) &&
       (filters.evidenceType === "all" || filters.evidenceType === item.type) &&
       (filters.status === "all" || filters.status === item.status) &&
       (filters.reviewer === "all" || filters.reviewer === item.createdBy.name) &&
@@ -546,37 +605,74 @@ function filterEvidence(filters: EvidenceFiltersState, items: EvidenceItem[], fi
 }
 
 interface EvidenceReviewScreenProps {
-  evidenceItems?: EvidenceItem[];
-  candidateFindings?: CandidateFinding[];
+  evidenceItems: EvidenceItem[];
+  candidateFindings: CandidateFinding[];
+  sessionOptions: EvidenceSelectOption[];
+  selectedSessionId: string;
+  onSessionChange: (sessionId: string) => void;
+  onSaveFinding: (findingId: string, update: FindingUpdateRequest, review?: FindingReviewRequest) => void;
+  isSavingFinding?: boolean;
   isLoading?: boolean;
   errorMessage?: string | null;
 }
 
 export function EvidenceReviewScreen({
-  evidenceItems = mockEvidenceItems,
-  candidateFindings = mockCandidateFindings,
+  evidenceItems,
+  candidateFindings,
+  sessionOptions,
+  selectedSessionId,
+  onSessionChange,
+  onSaveFinding,
+  isSavingFinding = false,
   isLoading = false,
   errorMessage = null,
 }: EvidenceReviewScreenProps) {
-  const [filters, setFilters] = useState(defaultEvidenceFilters);
-  const [selectedEvidenceId, setSelectedEvidenceId] = useState("evid-subdomain-brute-force");
+  const defaultFilters = useMemo(() => ({ ...emptyEvidenceFilters, session: selectedSessionId }), [selectedSessionId]);
+  const [filters, setFilters] = useState(defaultFilters);
+  const [selectedEvidenceId, setSelectedEvidenceId] = useState("");
   const [inspectorOpen, setInspectorOpen] = useState(true);
   const filteredItems = useMemo(() => filterEvidence(filters, evidenceItems, candidateFindings), [candidateFindings, evidenceItems, filters]);
-  const selectedEvidence = filteredItems.find((item) => item.id === selectedEvidenceId) ?? filteredItems[0] ?? evidenceItems[0] ?? mockEvidenceItems[0];
+
+  useEffect(() => {
+    setFilters(defaultFilters);
+  }, [defaultFilters]);
+
+  useEffect(() => {
+    if (!filteredItems.some((item) => item.id === selectedEvidenceId)) {
+      setSelectedEvidenceId(filteredItems[0]?.id ?? "");
+    }
+  }, [filteredItems, selectedEvidenceId]);
+
+  const selectedEvidence = filteredItems.find((item) => item.id === selectedEvidenceId) ?? null;
   const selectedFinding =
-    candidateFindings.find((finding) => finding.id === selectedEvidence.linkedFinding) ??
+    (selectedEvidence?.linkedFinding
+      ? candidateFindings.find((finding) => finding.id === selectedEvidence.linkedFinding)
+      : undefined) ??
     candidateFindings[0] ??
-    mockCandidateFindings[0];
+    null;
+  const reviewerOptions = useMemo(() => {
+    const reviewers = Array.from(new Set(evidenceItems.map((item) => item.createdBy.name).filter(Boolean)));
+    return [{ label: "All reviewers", value: "all" }, ...reviewers.map((name) => ({ label: name, value: name }))];
+  }, [evidenceItems]);
+  const metrics = useMemo(() => buildEvidenceMetrics(evidenceItems, candidateFindings), [candidateFindings, evidenceItems]);
+  const sessionLabel = sessionOptions.find((option) => option.value === selectedSessionId)?.label ?? "No session selected";
+
+  const handleFilterChange = (nextFilters: EvidenceFiltersState) => {
+    setFilters(nextFilters);
+    if (nextFilters.session !== selectedSessionId) {
+      onSessionChange(nextFilters.session);
+    }
+  };
 
   return (
     <div className="h-screen overflow-hidden bg-[#f6f8fa] text-slate-900">
-      <div className="flex h-full min-w-[2048px]">
-        <Sidebar />
+      <div className="flex h-full min-w-0">
+        <AppSidebar />
         <main className="flex min-w-0 flex-1 flex-col">
-          <Header />
+          <Header sessionLabel={sessionLabel} />
           <div className="flex min-h-0 flex-1">
-            <section className="min-w-0 flex-1 overflow-y-auto bg-[#f7f9fb] p-6">
-              <div className="space-y-5">
+            <section className="min-w-0 flex-1 overflow-auto bg-[#f7f9fb] p-6">
+              <div className="min-w-[1040px] space-y-5">
                 {errorMessage ? (
                   <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
                     {errorMessage}
@@ -587,9 +683,15 @@ export function EvidenceReviewScreen({
                     Loading evidence and findings...
                   </div>
                 ) : null}
-                <Filters filters={filters} onChange={setFilters} />
-                <Metrics />
-                {filteredItems.length > 0 ? (
+                <Filters
+                  filters={filters}
+                  onChange={handleFilterChange}
+                  sessionOptions={sessionOptions}
+                  reviewerOptions={reviewerOptions}
+                  defaultFilters={defaultFilters}
+                />
+                <Metrics metrics={metrics} />
+                {filteredItems.length > 0 && selectedEvidence ? (
                   <>
                     <EvidenceTable items={filteredItems} selectedId={selectedEvidence.id} onSelect={setSelectedEvidenceId} />
                     <EvidenceDetail evidence={selectedEvidence} />
@@ -601,7 +703,11 @@ export function EvidenceReviewScreen({
                 )}
               </div>
             </section>
-            {inspectorOpen ? <Inspector finding={selectedFinding} onClose={() => setInspectorOpen(false)} /> : <aside className="flex w-[64px] shrink-0 flex-col items-center border-l border-slate-200 bg-white py-4"><button type="button" aria-label="Open finding inspector" className="grid h-10 w-10 place-items-center rounded-md border border-slate-200 text-teal-700 hover:bg-teal-50" onClick={() => setInspectorOpen(true)}><PanelRightOpen className="h-5 w-5" /></button></aside>}
+            {inspectorOpen && selectedFinding ? (
+              <Inspector finding={selectedFinding} onClose={() => setInspectorOpen(false)} onSaveFinding={onSaveFinding} isSaving={isSavingFinding} />
+            ) : (
+              <aside className="flex w-[64px] shrink-0 flex-col items-center border-l border-slate-200 bg-white py-4"><button type="button" aria-label="Open finding inspector" className="grid h-10 w-10 place-items-center rounded-md border border-slate-200 text-teal-700 hover:bg-teal-50" onClick={() => setInspectorOpen(true)}><PanelRightOpen className="h-5 w-5" /></button></aside>
+            )}
           </div>
         </main>
       </div>
