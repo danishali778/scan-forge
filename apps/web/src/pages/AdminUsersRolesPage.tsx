@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 
 import { AdminUsersRolesHeader } from "@/components/admin-users-roles/AdminUsersRolesHeader";
-import { AdminUsersRolesSidebar } from "@/components/admin-users-roles/AdminUsersRolesSidebar";
 import { AdminUsersTable } from "@/components/admin-users-roles/AdminUsersTable";
 import { RolePermissionsMatrix } from "@/components/admin-users-roles/RolePermissionsMatrix";
 import { SelectedUserPanel } from "@/components/admin-users-roles/SelectedUserPanel";
 import { StatusSummaryCards } from "@/components/admin-users-roles/StatusSummaryCards";
+import { AppSidebar } from "@/components/layout/AppSidebar";
 import { useAdminSettings } from "@/hooks/useAdminSettings";
 import { getErrorMessage } from "@/lib/errors";
 import { adminUsers, settingsTabs } from "@/mocks/admin-users-roles";
@@ -61,7 +61,7 @@ export function AdminUsersRolesPage() {
   return (
     <div className="h-screen overflow-hidden bg-[#f8faf9] text-slate-900">
       <div className="flex h-full min-w-[1900px]">
-        <AdminUsersRolesSidebar />
+        <AppSidebar />
 
         <main className="flex min-w-0 flex-1 flex-col">
           <AdminUsersRolesHeader activeTab={activeTab} onTabChange={setActiveTab} />

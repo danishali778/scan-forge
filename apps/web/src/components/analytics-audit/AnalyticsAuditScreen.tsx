@@ -2,7 +2,7 @@ import { AnalyticsDashboardPanels, AnalyticsTables } from "@/components/analytic
 import { AnalyticsHeader } from "@/components/analytics-audit/AnalyticsHeader";
 import { AnalyticsInspector } from "@/components/analytics-audit/AnalyticsInspector";
 import { AnalyticsMetricsStrip } from "@/components/analytics-audit/AnalyticsMetrics";
-import { AnalyticsSidebar } from "@/components/analytics-audit/AnalyticsSidebar";
+import { AppSidebar } from "@/components/layout/AppSidebar";
 import { AuditEventsTable } from "@/components/analytics-audit/AuditEventsTable";
 import type { AnalyticsMetric, AuditEventRow, SeverityMetric, StatusSlice, ToolMetric } from "@/types/analytics-audit";
 
@@ -28,7 +28,7 @@ export function AnalyticsAuditScreen({
   return (
     <div className="h-screen overflow-hidden bg-[#f8faf9] text-slate-900">
       <div className="flex h-full min-w-[1440px]">
-        <AnalyticsSidebar />
+        <AppSidebar />
         <div className="flex min-w-0 flex-1 flex-col">
           <AnalyticsHeader />
           <div className="flex min-h-0 flex-1">
