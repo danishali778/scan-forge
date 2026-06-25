@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
+import { AppSidebar } from "@/components/layout/AppSidebar";
 import { RuntimeFilesPanel } from "@/components/runtime-tool-calls/RuntimeFilesPanel";
 import { RuntimeHeader } from "@/components/runtime-tool-calls/RuntimeHeader";
 import { RuntimeInstancePanel } from "@/components/runtime-tool-calls/RuntimeInstancePanel";
-import { RuntimeSidebar } from "@/components/runtime-tool-calls/RuntimeSidebar";
 import { ToolCallDetailsPanel } from "@/components/runtime-tool-calls/ToolCallDetailsPanel";
 import { ToolCallsTable } from "@/components/runtime-tool-calls/ToolCallsTable";
 import { useRuntimeToolCalls } from "@/hooks/useRuntimeToolCalls";
@@ -18,7 +18,6 @@ import {
   mapRuntimeInstance,
   mapToolCall,
 } from "@/lib/runtimeMapping";
-import { runtimeToolCallsData } from "@/mocks/runtime-tool-calls";
 import type { ToolCall, ToolCallFilter } from "@/types/runtime-tool-calls";
 
 const DEFAULT_COMMAND_JSON = "[\"python\",\"-c\",\"print('hello from ScopeForge runtime')\"]";
@@ -52,33 +51,27 @@ export function RuntimeToolCallsPage() {
   const [isCommandDialogOpen, setIsCommandDialogOpen] = useState(false);
   const [commandJson, setCommandJson] = useState(DEFAULT_COMMAND_JSON);
   const [commandValidationError, setCommandValidationError] = useState("");
-  const hasBackendSession = Boolean(runtimeState.selectedSessionId);
+  const hasSelectedSession = Boolean(runtimeState.selectedSessionId);
 
   const backendToolCalls = useMemo(() => runtimeState.toolCalls.map(mapToolCall), [runtimeState.toolCalls]);
-  const toolCalls = hasBackendSession ? backendToolCalls : runtimeToolCallsData.toolCalls;
+  const toolCalls = backendToolCalls;
   const filters = useMemo(() => buildToolCallFilters(toolCalls), [toolCalls]);
   const fileTree = useMemo(() => {
-    const backendFiles = mapRuntimeFiles(runtimeState.files);
-
-    return hasBackendSession ? backendFiles : runtimeToolCallsData.fileTree;
-  }, [hasBackendSession, runtimeState.files]);
+    return mapRuntimeFiles(runtimeState.files);
+  }, [runtimeState.files]);
   const recentWrites = useMemo(() => {
-    const backendWrites = mapRecentFileWrites(runtimeState.events, backendToolCalls);
-
-    return hasBackendSession ? backendWrites : runtimeToolCallsData.recentWrites;
-  }, [backendToolCalls, hasBackendSession, runtimeState.events]);
+    return mapRecentFileWrites(runtimeState.events, backendToolCalls);
+  }, [backendToolCalls, runtimeState.events]);
   const runtime = runtimeState.runtime
     ? mapRuntimeInstance(runtimeState.runtime)
-    : hasBackendSession
-      ? emptyRuntimeInstance(runtimeState.selectedSessionId)
-      : runtimeToolCallsData.runtime;
-  const headerData = runtimeState.selectedSessionId
+    : emptyRuntimeInstance(runtimeState.selectedSessionId);
+  const headerData = hasSelectedSession
     ? mapRuntimeHeaderData(runtimeState.session, runtimeState.runtime)
     : {
-        breadcrumb: runtimeToolCallsData.breadcrumb,
-        status: runtimeToolCallsData.status,
-        health: runtimeToolCallsData.health,
-        mode: runtimeToolCallsData.mode,
+        breadcrumb: ["Sessions", "No session selected", "Runtime"],
+        status: "stopped" as const,
+        health: "degraded" as const,
+        mode: "assisted" as const,
       };
   const [selectedToolCallId, setSelectedToolCallId] = useState(toolCalls[0]?.id ?? "");
   const visibleToolCalls = useMemo(() => getCallsForFilter(toolCalls, activeFilter), [activeFilter, toolCalls]);
@@ -138,19 +131,13 @@ export function RuntimeToolCallsPage() {
 
   return (
     <div className="h-screen overflow-hidden bg-slate-100 text-slate-900">
-      <div className="flex h-full min-w-[1580px]">
-        <RuntimeSidebar
-          data={{
-            workspaceName: runtimeToolCallsData.workspaceName,
-            userName: runtimeToolCallsData.userName,
-            userEmail: runtimeToolCallsData.userEmail,
-          }}
-        />
+      <div className="flex h-full min-w-[1580px] overflow-hidden">
+        <AppSidebar />
 
-        <main className="flex min-w-0 flex-1 flex-col">
+        <main className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <RuntimeHeader
             data={headerData}
-            canUseRuntime={Boolean(runtimeState.selectedSessionId)}
+            canUseRuntime={hasSelectedSession}
             isMutating={runtimeState.isMutating}
             onRefresh={runtimeState.refetchAll}
             onStartRuntime={() => runtimeState.startRuntime.mutate()}
@@ -159,12 +146,22 @@ export function RuntimeToolCallsPage() {
           />
 
           {actionError ? (
-            <div className="border-b border-amber-200 bg-amber-50 px-7 py-3 text-sm text-amber-900">
+            <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-7 py-3 text-sm text-amber-900">
               {getErrorMessage(actionError)}
             </div>
           ) : null}
+          {!runtimeState.isLoading && !hasSelectedSession ? (
+            <div className="shrink-0 border-b border-blue-100 bg-blue-50 px-7 py-3 text-sm text-blue-900">
+              No backend sessions are available for runtime operations. Create and start a session before using the runtime console.
+            </div>
+          ) : null}
+          {runtimeState.isLoading ? (
+            <div className="shrink-0 border-b border-blue-100 bg-blue-50 px-7 py-3 text-sm text-blue-900">
+              Loading runtime session data...
+            </div>
+          ) : null}
 
-          <div className="grid min-h-0 flex-1 grid-cols-[320px_minmax(760px,1fr)_392px] grid-rows-[minmax(0,1fr)_300px]">
+          <div className="grid min-h-0 flex-1 grid-cols-[320px_minmax(760px,1fr)_392px] grid-rows-[minmax(0,1fr)_300px] overflow-hidden">
             <RuntimeInstancePanel runtime={runtime} />
 
             <ToolCallsTable
@@ -176,12 +173,12 @@ export function RuntimeToolCallsPage() {
               onSelectToolCall={setSelectedToolCallId}
             />
 
-            <div className="row-span-2 min-h-0">
+            <div className="row-span-2 min-h-0 overflow-hidden">
               <ToolCallDetailsPanel toolCall={selectedToolCall} onClose={() => setSelectedToolCallId("")} />
             </div>
 
-            <div className="col-span-2 min-h-0">
-            <RuntimeFilesPanel fileTree={fileTree} recentWrites={recentWrites} />
+            <div className="col-span-2 min-h-0 overflow-hidden">
+              <RuntimeFilesPanel fileTree={fileTree} recentWrites={recentWrites} />
             </div>
           </div>
         </main>
